@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>時隙鐘聲 The Bell Between Hours</title>
+<meta name="description" content="原創的時空旅行角色扮演遊戲：鐘匠學徒蓮在三個時代之間穿梭，阻止一口會吃掉時間的鐘。戰鬥就在地圖上進行，夥伴可以合體出招。中英雙語。An original time-travel RPG in Chinese and English: a clockmaker's apprentice crosses three eras to stop a bell that eats time. Battles happen right on the map, and friends can combine their techniques.">
+<link rel="preload" href="fonts/Cubic_11.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face { font-family: Cubic11; src: url(fonts/Cubic_11.woff2) format('woff2'); font-display: block; }
+  html, body { margin: 0; height: 100%; background: #05060c; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+  body { display: flex; align-items: center; justify-content: center; font-family: Cubic11, sans-serif; color: #ccd; }
+  #screen { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+  #touch { display: none; position: fixed; inset: 0; pointer-events: none; }
+  body.touching #touch { display: block; }
+  .dpad { position: absolute; left: max(14px, env(safe-area-inset-left)); bottom: 14px; width: 132px; height: 132px; pointer-events: auto; }
+  .dpad div { position: absolute; width: 44px; height: 44px; background: rgba(30,36,64,0.55); border: 2px solid rgba(200,170,90,0.6); border-radius: 8px; }
+  .dpad .u { left: 44px; top: 0; } .dpad .d { left: 44px; bottom: 0; } .dpad .l { left: 0; top: 44px; } .dpad .r { right: 0; top: 44px; } .dpad .c { left: 44px; top: 44px; border-radius: 0; background: rgba(20,24,44,0.45); }
+  .btn { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: rgba(150,100,30,0.6); border: 3px solid rgba(240,210,130,0.75); color: #fff; font: 20px Cubic11, sans-serif; display: flex; align-items: center; justify-content: center; line-height: 1; pointer-events: auto; }
+  .btn.a { right: max(18px, env(safe-area-inset-right)); bottom: 64px; }
+  .btn.b { right: calc(max(18px, env(safe-area-inset-right)) + 70px); bottom: 18px; background: rgba(40,60,130,0.6); border-color: rgba(130,160,240,0.75); }
+  .btn.m { right: calc(max(18px, env(safe-area-inset-right)) + 56px); top: 10px; bottom: auto; width: 56px; height: 30px; border-radius: 15px; font-size: 14px; background: rgba(40,40,60,0.6); border-color: rgba(160,160,190,0.7); }
+  #musicBtn { position: fixed; top: 8px; right: 8px; z-index: 20; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.45); background: rgba(20,24,48,0.6); color: #fff; font: 20px sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #musicBtn.off { opacity: 0.6; }
+  #musicBtn.off::after { content: ''; position: absolute; width: 30px; height: 3px; background: #ff6070; transform: rotate(-45deg); border-radius: 2px; }
+</style>
+</head>
+<body>
+<button id="musicBtn" type="button" aria-label="Music on/off" title="Music on/off (M)">♪</button>
+<canvas id="screen" width="480" height="320"></canvas>
+<div id="touch">
+  <div class="dpad"><div class="u" data-k="up"></div><div class="l" data-k="left"></div><div class="c"></div><div class="r" data-k="right"></div><div class="d" data-k="down"></div></div>
+  <div class="btn b" data-k="b">B</div>
+  <div class="btn a" data-k="a">A</div>
+  <div class="btn m" data-k="menu" id="menuBtn">選單</div>
+</div>
+<script>
+  // The 480x320 picture fills the window. Inside, the canvas holds a whole number of real pixels per game
+  // pixel, so the pixel font stays sharp; the browser then scales that the last little bit.
+  function fit() {
+    const dpr = window.devicePixelRatio || 1;
+    let s = Math.min(innerWidth / 480, innerHeight / 320);
+    if (s * dpr >= 2) s = Math.floor(s * dpr) / dpr;
+    const k = Math.max(1, Math.min(4, Math.ceil(s * dpr - 0.01)));
+    const c = document.getElementById('screen');
+    if (c.width !== 480 * k) { c.width = 480 * k; c.height = 320 * k; }
+    c.style.width = Math.round(480 * s) + 'px'; c.style.height = Math.round(320 * s) + 'px';
+  }
+  addEventListener('resize', fit);
+  fit();
+</script>
+<script type="module" src="js/main.js?v=1"></script>
+</body>
+</html>

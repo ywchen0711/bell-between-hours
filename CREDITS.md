@@ -1,0 +1,163 @@
+# Credits
+
+時隙鐘聲 The Bell Between Hours is an original game: its story, characters, maps, dialogue and code were written for it.
+It is a time-travel RPG in the spirit of 16-bit classics, but none of their names, characters, story, art or music are used.
+
+All art and music come from free, openly licensed packs. Thank you to every artist below.
+
+## Map tiles and props: LPC Tile Atlas 1 and 2
+- "LPC Tile Atlas" and "LPC Tile Atlas 2", put together by adrix89: https://opengameart.org/content/lpc-tile-atlas and https://opengameart.org/content/lpc-tile-atlas2
+- Licence: CC-BY-SA 3.0 / GPL 3.0. Full per-artist lists: `assets/tiles/Attribution-Atlas1.txt` and `assets/tiles/Attribution-Atlas2.txt`.
+- Artists include Lanea Zimmerman (Sharm), Daniel Armstrong (HughSpectrum), Casper Nilsson, Daniel Eddeland, Johann Charlot, Skyler Robert Colladay, Barbara Rivera, Chris Phillips, Anamaris and Krusmira, Jonas Klinger, Joshua Taylor, Leo Villeveygoux, Mark Weyer, Matthew Nash, Stephen Challener (Redshrike), Charles Sanchez (CharlesGabriel) and Manuel Riecke (MrBeast).
+
+## Monsters
+- "LPC monsters": Charles Sanchez (CharlesGabriel), with Stephen Challener (Redshrike) and Matthew Nash. https://opengameart.org/content/lpc-monsters (CC-BY-SA 3.0 / GPL 3.0)
+
+## People
+Every person (heroes, townsfolk and the monsters that walk on two legs) was put together from layers of the Universal LPC Spritesheet Character Generator
+(https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator). Each layer keeps its own licence (OGA-BY 3.0, CC-BY-SA 3.0 and/or GPL 3.0).
+The layers used, with their authors and licences:
+
+- `arms/armour/plate/male` — Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax), bluecarrot16, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `arms/armour/plate/thin` — Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax), bluecarrot16, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `beards/beard/basic` — JaidynReiman, Carlo Enrico Victoria (Nemisys) (CC-BY-SA 3.0, GPL 3.0)
+- `beards/mustache/basic` — JaidynReiman, Carlo Enrico Victoria (Nemisys) (CC-BY-SA 3.0, GPL 3.0)
+- `body/bodies/child` — bluecarrot16, Benjamin K. Smith (BenCreating), ElizaWy, MuffinElZangano, Durrani, Nila122, kheftel, Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `body/bodies/female` — Benjamin K. Smith (BenCreating), bluecarrot16, TheraHedwig, Evert, MuffinElZangano, Durrani, Pierre Vigier (pvigier), ElizaWy, Matthew Krohn (makrohn), Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `body/bodies/male` — bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating), Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano, Durrani, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `body/bodies/muscular` — bluecarrot16, JaidynReiman, Evert, TheraHedwig, MuffinElZangano, Durrani, Sander Frenken (castelonia), Benjamin K. Smith (BenCreating), Eliza Wyatt (ElizaWy), dalonedrau, Stephen Challener (Redshrike) (CC-BY-SA 3.0, GPL 3.0)
+- `body/bodies/pregnant` — bluecarrot16, JaidynReiman, Evert, TheraHedwig, MuffinElZangano, Durrani, Benjamin K. Smith (BenCreating), Pierre Vigier (pvigier), Eliza Wyatt (ElizaWy), Matthew Krohn (makrohn), Johannes Sjölund (wulax), Stephen Challener (Redshrike) (CC-BY-SA 3.0, GPL 3.0)
+- `body/bodies/skeleton` — bluecarrot16, Napsio, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `body/bodies/teen` — bluecarrot16, Evert, TheraHedwig, Benjamin K. Smith (BenCreating), MuffinElZangano, Durrani, Pierre Vigier (pvigier), Eliza Wyatt (ElizaWy), Matthew Krohn (makrohn), Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `body/tail/lizard` — Nila122, bluecarrot16, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `body/tail/wolf` — JaidynReiman (OGA-BY 3.0+, CC-BY 3.0+, GPL 3.0)
+- `cape/tattered/bg` — Nila122, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `cape/tattered/fg` — Nila122, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `dress/bodice` — bluecarrot16, Matthew Krohn (makrohn), Lanea Zimmerman (Sharm) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `dress/sash` — bluecarrot16, Thane Brimhall (pennomi), laetissima, Matthew Krohn (makrohn) (CC-BY-SA 3.0, GPL 3.0)
+- `facial/glasses/round` — bluecarrot16, Thane Brimhall (pennomi), laetissima (CC-BY-SA 3.0, GPL 3.0)
+- `facial/glasses/secretary` — JaidynReiman, Thane Brimhall (pennomi), laetissima (CC-BY-SA 3.0, GPL 3.0)
+- `facial/glasses/shades` — JaidynReiman, Thane Brimhall (pennomi), laetissima (CC-BY-SA 3.0, GPL 3.0)
+- `feet/armour/plate` — Matthew Krohn (makrohn), Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `feet/armour/plate/female` — Matthew Krohn (makrohn), Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `feet/boots/basic` — JaidynReiman, bluecarrot16, Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `feet/boots/basic/thin` — JaidynReiman, bluecarrot16, Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `feet/boots/fold` — JaidynReiman (OGA-BY 3.0+, CC-BY 3.0+, GPL 3.0)
+- `feet/boots/rimmed` — JaidynReiman (OGA-BY 3.0+, CC-BY 3.0+, GPL 3.0)
+- `feet/sandals` — Nila122, JaidynReiman, Matthew Krohn (makrohn), Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `feet/shoes` — JaidynReiman, bluecarrot16, Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `feet/shoes/basic/thin` — JaidynReiman, Joe White, Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `feet/shoes/revised` — ElizaWy, JaidynReiman (OGA-BY 3.0)
+- `feet/shoes/revised/male` — JaidynReiman, ElizaWy, Bluecarrot16, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (OGA-BY 3.0, GPL 3.0)
+- `hair/balding` — ElizaWy (OGA-BY 3.0)
+- `hair/bedhead` — JaidynReiman, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hair/bob` — ElizaWy, bluecarrot16 (CC0)
+- `hair/braid` — Nila122, ElizaWy (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0, GPL 2.0)
+- `hair/lob` — bluecarrot16 (CC0)
+- `hair/long_messy` — Mandi Paugh, bluecarrot16 (GPL 2.0, GPL 3.0, CC-BY 3.0)
+- `hair/long_straight` — JaidynReiman, thecilekli, bluecarrot16 (CC0)
+- `hair/loose` — JaidynReiman, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hair/messy1` — JaidynReiman, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hair/parted_side_bangs` — JaidynReiman (OGA-BY 3.0+, CC-BY 3.0+, CC-BY-SA 3.0, GPL 3.0)
+- `hair/plain` — JaidynReiman, Manuel Riecke (MrBeast), Joe White (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `hair/ponytail` — JaidynReiman, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hair/ponytail2` — JaidynReiman, Manuel Riecke (MrBeast), Joe White (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `hair/princess` — JaidynReiman, Lanea Zimmerman (Sharm) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `hair/spiked` — kcilds/Rocetti/Eredah (CC-BY 4.0)
+- `hair/unkempt` — JaidynReiman, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hat/cloth/bandana` — Matthew Krohn (makrohn), JaidynReiman, Marcel van de Steeg (MadMarcel), JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0)
+- `hat/cloth/hood` — Johannes Sjölund (wulax), JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `hat/cloth/leather_cap` — Johannes Sjölund (wulax), Matthew Krohn (Makrohn), JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `hat/formal/tiara` — Luke Mehl (CC-BY-SA 3.0, GPL 3.0)
+- `hat/headband/thick` — JaidynReiman (OGA-BY 3.0+, CC-BY 3.0+, GPL 3.0)
+- `hat/helmet/kettle` — Johannes Sjölund (wulax), JaidynReiman, Napsio (Vitruvian Studio) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/alien` — bluecarrot16, Benjamin K. Smith (BenCreating), Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/boarman` — Benjamin K. Smith (BenCreating), Daniel Eddeland (daneeklu) (CC-BY 3.0, GPL 2.0)
+- `head/heads/frankenstein` — Stephen Challener (Redshrike), bluecarrot16 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/goblin` — bluecarrot16, Stephen Challener (Redshrike), William.Thomsponj (OGA-BY 3.0, CC-BY 4.0, GPL 2.0, GPL 3.0)
+- `head/heads/human/child` — Stephen Challener (Redshrike), kheftel, bluecarrot16 (OGA-BY 3.0, CC-BY 3.0, GPL 3.0)
+- `head/heads/human/female` — bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/human/female_elderly` — Benjamin K. Smith (BenCreating), Eliza Wyatt (ElizaWy), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY 3.0)
+- `head/heads/human/female_small` — ElizaWy, Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY)
+- `head/heads/human/male` — bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/human/male_elderly` — Benjamin K. Smith (BenCreating), Eliza Wyatt (ElizaWy), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY 3.0)
+- `head/heads/human/male_gaunt` — Stephen Challener (Redshrike), bluecarrot16 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/human/male_plump` — Stephen Challener (Redshrike), ?? (CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/human/male_small` — ElizaWy, Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY)
+- `head/heads/lizard/male` — bluecarrot16, Benjamin K. Smith (BenCreating), Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/minotaur` — Evert, Nila122, Daniel Eddeland (daneeklu) (CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/orc/male` — bluecarrot16, Matthew Krohn (makrohn), Stephen Challener (Redshrike), Zi Ye (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/skeleton` — bluecarrot16, Napsio, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/troll` — bluecarrot16, AntumDeluge, Tuomo Untinen (reemax) (CC-BY 3.0)
+- `head/heads/wolf/male` — bluecarrot16, Sander Frenken (castelonia), Benjamin K. Smith (BenCreating), William.Thompsonj, Stephen Challener (Redshrike) (CC-BY-SA 3.0, GPL 3.0)
+- `head/heads/zombie` — bluecarrot16, Benjamin K. Smith (BenCreating), Sander Frenken (castelonia), Stephen Challener (Redshrike) (CC-BY-SA 3.0, GPL 3.0)
+- `legs/armour/plate` — bluecarrot16, JaidynReiman, Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `legs/formal` — bluecarrot16, JaidynReiman, ElizaWy, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `legs/formal/thin` — bluecarrot16, JaidynReiman, ElizaWy, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `legs/pants/child` — Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `legs/pants/male` — bluecarrot16, JaidynReiman, ElizaWy, Matthew Krohn (makrohn), Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, GPL 3.0, CC-BY-SA 3.0)
+- `legs/pants/thin` — bluecarrot16, JaidynReiman, ElizaWy, Joe White, Matthew Krohn (makrohn), Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, GPL 3.0, CC-BY-SA 3.0)
+- `legs/pants2` — ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0)
+- `legs/pants2/male` — JaidynReiman, ElizaWy, Bluecarrot16, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, GPL 3.0)
+- `legs/shorts/shorts` — ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0)
+- `legs/shorts/shorts/male` — JaidynReiman, ElizaWy, Bluecarrot16, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, GPL 3.0)
+- `legs/skirts/legion` — bluecarrot16, Nila122, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `legs/skirts/plain` — bluecarrot16, Pierre Vigier (pvigier), Johannes Sjölund (wulax), Ahmad3366, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `legs/skirts/slit` — Nila122, ElizaWy, bluecarrot16 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `neck/amulet/star` — bluecarrot16, AntumDeluge, 7Soul (CC0)
+- `neck/necklace/beaded_large` — bluecarrot16 (CC0)
+- `neck/necklace/beaded_small` — bluecarrot16, JaidynReiman (CC0)
+- `neck/scarf` — Nila122, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-SA 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `shoulders/pauldrons` — Matthew Krohn (makrohn), Johannes Sjölund (wulax), bluecarrot16, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/aprons/apron` — Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `torso/aprons/apron_full` — ElizaWy, bluecarrot16 (OGA-BY 3.0, GPL 3.0)
+- `torso/aprons/apron_half` — ElizaWy, bluecarrot16 (OGA-BY 3.0, GPL 3.0)
+- `torso/armour/leather` — Johannes Sjölund (wulax), bluecarrot16, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/armour/leather/female` — Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax), bluecarrot16, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/armour/leather/teen` — Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax), bluecarrot16, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/armour/plate/female` — JaidynReiman, bluecarrot16, Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/armour/plate/male` — Napsio (Vitruvian Studio), JaidynReiman, bluecarrot16, Michael Whitlock (bigbeargames), Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/armour/plate/teen` — JaidynReiman, bluecarrot16, Michael Whitlock (bigbeargames), Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/bandage` — Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `torso/chainmail` — Johannes Sjölund (wulax), Napsio (Vitruvian Studio), JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/longsleeve/longsleeve2` — ElizaWy, JaidynReiman, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (OGA-BY 3.0)
+- `torso/clothes/longsleeve/longsleeve2_buttoned` — ElizaWy, JaidynReiman, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (OGA-BY 3.0)
+- `torso/clothes/robe` — Luke Mehl (CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/shirt/child` — Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/shortsleeve/tshirt` — ElizaWy, JaidynReiman, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (OGA-BY 3.0)
+- `torso/clothes/sleeveless/sleeveless2` — ElizaWy, JaidynReiman, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (OGA-BY 3.0)
+- `torso/clothes/vest` — bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/vest/male/gray.png` — Michael Whitlock (bigbeargames), bluecarrot16, Thane Brimhall (pennomi), laetissima (CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/vest/male/gray_striped.png` — Michael Whitlock (bigbeargames), bluecarrot16, Thane Brimhall (pennomi), laetissima (CC-BY-SA 3.0, GPL 3.0)
+- `torso/jacket/collared` — bluecarrot16 (CC-BY-SA 3.0, GPL 3.0)
+- `torso/jacket/tabard` — bluecarrot16, Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/jacket/tabard/female` — JaidynReiman, Matthew Krohn (makrohn), Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/jacket/trench` — bluecarrot16 (CC-BY-SA 3.0, GPL 3.0)
+- `torso/waist/belt_leather` — bluecarrot16, Johannes Sjölund (wulax), Matthew Krohn (makrohn) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/waist/belt_mage` — Luke Mehl (CC-BY-SA 3.0, GPL 3.0)
+- `weapon/blunt/mace` — Johannes Sjölund (wulax), bluecarrot16 (OGA-BY 3.0, CC-BY-SA 3.0)
+- `weapon/blunt/waraxe` — Benjamin K. Smith (BenCreating), bluecarrot16, Sander Frenken (castelonia) (CC-BY-SA 3.0, GPL 3.0)
+- `weapon/magic/crystal` — bluecarrot16 (OGA-BY 3.0+, GPL 3.0, CC-BY 4.0)
+- `weapon/magic/gnarled` — bluecarrot16 (OGA-BY 3.0+, GPL 3.0, CC-BY 4.0)
+- `weapon/polearm/cane` — bluecarrot16 (CC-BY-SA 3.0, GPL 3.0)
+- `weapon/polearm/halberd` — Benjamin K. Smith (BenCreating), bluecarrot16, Sander Frenken (castelonia) (CC-BY-SA 3.0, GPL 3.0)
+- `weapon/polearm/scythe` — bluecarrot16 (CC-BY-SA 3.0)
+- `weapon/polearm/spear` — Pierre Vigier (pvigier), Johannes Sjölund (wulax), Inboxninja (CC-BY-SA 3.0)
+- `weapon/ranged/bow/normal` — Johannes Sjölund (wulax), Pierre Vigier (pvigier) (OGA-BY 3.0+, GPL 3.0, CC-BY 4.0)
+- `weapon/ranged/crossbow` — bluecarrot16, drjamgo@hotmail.com (CC0)
+- `weapon/sword/arming` — ElizaWy; walk and down by JaidynReiman (OGA-BY 3.0)
+- `weapon/sword/dagger` — bluecarrot16, Johannes Sjölund (wulax), Matthew Krohn (makrohn) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `weapon/sword/saber` — Daniel Eddeland (daneeklu), Johannes Sjölund (wulax), gr3yh47, bluecarrot16 (CC-BY-SA 3.0)
+
+## Music (CC0)
+- Juhani Junkala (SubspaceAudio): JRPG Music Pack #1 Exploration, #4 Calm, #5 Action, and Epic Boss Battle. https://opengameart.org/users/subspaceaudio
+- OwlishMedia: "Mysterious Clock". https://opengameart.org/content/mysterious-clock
+- Haeldb: "Town in ruins loop". https://opengameart.org/content/town-in-ruins-loop
+
+The tracks were converted to MP3 for the web.
+
+## Font
+- Cubic 11 by ACh-K, SIL Open Font License 1.1 (fonts/Cubic_11-LICENSE.txt).
+
+## Licence of this game's art
+Because the LPC art is CC-BY-SA, the composed character sheets in `assets/chars/` are shared under CC-BY-SA 3.0 as well.

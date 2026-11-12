@@ -132,7 +132,7 @@ export function fieldUpdate(canAct) {
     let dx = 0, dy = 0;
     if (input.held('left')) dx -= 1; if (input.held('right')) dx += 1; if (input.held('up')) dy -= 1; if (input.held('down')) dy += 1;
     if (dx || dy) {
-      const sp = input.held('b') ? 3.1 : 2.0, k = dx && dy ? 0.7071 : 1;
+      const sp = input.held('b') || input.held('run') ? 4.4 : 2.4, k = dx && dy ? 0.7071 : 1;
       lead.dir = dx && dy ? (lead.dir === dirOf(dx, 0) || lead.dir === dirOf(0, dy) ? lead.dir : dirOf(dx, dy)) : dirOf(dx, dy);
       moving = tryMove(lead, dx * sp * k, dy * sp * k);
       if (moving) lead.step += sp / 2.2;
@@ -147,7 +147,7 @@ export function fieldUpdate(canAct) {
       const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), mv = d > 0.5;
       if (mv) { p.dir = dirOf(dx, dy) || td; p.step += 1; }
       // never more than a quick step at a time, so after a battle they walk back into line
-      const k = d > 4 ? 4 / d : 1;
+      const k = d > 6 ? 6 / d : 1;
       p.x += dx * k; p.y += dy * k; p.frame = mv ? 1 + (Math.floor(p.step / 3) % 8) : 0;
     });
     S.x = lead.x; S.y = lead.y; S.dir = lead.dir;

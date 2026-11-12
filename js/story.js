@@ -16,7 +16,7 @@ def('intro', async (c) => {
   await c.say('奧林師傅', T('那是一個穿斗篷的旅人賣給我的星鐵。聲音好得不得了……只是還沒調音。', "Star-iron, sold to me by a cloaked traveller. A wonderful voice... but it isn't tuned yet."));
   await c.say('奧林師傅', T('問題是，昨晚有盜賊闖進來，把我調鐘的音叉偷走了！聽說他們躲在東邊的燈河之森。', "Trouble is, bandits broke in last night and stole my tuning fork! They say they hide in Lantern Woods, east of town."));
   await c.say('奧林師傅', T('你去把音叉拿回來。帶著這把木劍……小心點，森林裡的怪物看得見，你也躲得開。', "Go and get it back. Take this practice sword... and be careful. You can see the monsters in the woods, so you can steer round them too."));
-  await c.hint(T('地圖上看得到的怪物，走過去碰到就會在原地開戰。按住 B 可以跑。', "Monsters walk the map where you can see them. Walk into one and the fight starts right there. Hold B to run."));
+  await c.hint(T('地圖上看得到的怪物，走過去碰到就會在原地開戰。按住 X（或 Shift、手把 B 鍵）可以跑步。', "Monsters walk the map where you can see them. Walk into one and the fight starts right there. Hold X (or Shift, or B on a pad) to run."));
   c.set('met_orrin');
 });
 def('orrin', async (c) => {

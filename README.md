@@ -25,7 +25,7 @@ dying sun, where Vesper the Bellwright must face the machine she built to hold o
 - **The Gearwork Fair:** a strength bell, clockwork beetle races and a prize booth; **fishing** at three spots.
 - **Three endings**, New Game+ that keeps levels and items, and a post-game superboss behind the Unrung Bell.
 
-Controls: arrows/WASD move, Z/Enter confirm, X back (hold to run), C/Tab menu, M music. Touch buttons appear on phones.
+Controls: arrows/WASD move, Z/Enter confirm, X back (hold X or Shift to run), C/Tab menu, M music. Touch buttons appear on phones.
 
 Art: LPC (CC-BY-SA 3.0 / GPL 3.0, OGA-BY 3.0) and LPC-style creatures from OpenGameArt (CC-BY, CC-BY-SA, CC0).
 Music: Juhani Junkala and others (CC0, CC-BY 4.0). See CREDITS.md.

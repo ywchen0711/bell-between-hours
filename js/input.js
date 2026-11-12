@@ -1,7 +1,7 @@
 // Keyboard, gamepad and on-screen touch buttons, read once per frame.
 const MAP = {
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
-  KeyZ: 'a', Enter: 'a', Space: 'a', KeyJ: 'a', KeyX: 'b', Escape: 'b', Backspace: 'b', KeyK: 'b', KeyC: 'menu', Tab: 'menu',
+  KeyZ: 'a', Enter: 'a', Space: 'a', KeyJ: 'a', KeyX: 'b', Escape: 'b', Backspace: 'b', KeyK: 'b', KeyC: 'menu', Tab: 'menu', ShiftLeft: 'run', ShiftRight: 'run',
 };
 // tap remembers a key pressed and let go between two frames, so quick taps are never lost
 const down = new Set(), was = new Set(), touch = new Set(), tap = new Set();

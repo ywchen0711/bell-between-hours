@@ -13,7 +13,7 @@ export const TERRAIN = {
 // plain floors that tile without edges: [atlas, column, row, columns, rows] of repeatable tiles
 const FLOOR = {
   stone: ['terrain', 16, 26, 3, 3], flag: ['terrain', 24, 11, 3, 1], plank: ['terrain', 13, 19, 1, 1], tiles: ['terrain', 27, 10, 1, 2], slate: ['terrain', 30, 13, 2, 2],
-  cobble: ['terrain', 30, 16, 2, 4], slab: ['terrain', 16, 29, 4, 3],
+  cobble: ['terrain', 30, 16, 2, 4], slab: ['terrain', 16, 29, 3, 3],
 };
 
 function blit(g, img, sx, sy, dx, dy, w = T, h = T) { g.drawImage(img, sx, sy, w, h, dx, dy, w, h); }
@@ -88,7 +88,10 @@ export function renderGround(rows, legend, order, base) {
     const later = order.slice(order.indexOf(name) + 1).filter((n) => !n.startsWith('wall:'));
     const under = Object.keys(legend).filter((k) => later.includes(legend[k]) && !legend[k].startsWith('floor:'));
     const has = (x, y) => letters.includes(code(x, y)) || (!name.startsWith('wall:') && !name.startsWith('floor:') && under.includes(code(x, y)) && TERRAIN[name] && name !== 'water' && name !== 'lava' && name !== 'hole' && name !== 'void' && name !== 'murk');
-    if (name.startsWith('floor:')) layFloor(g, name.slice(6), w, h, has);
+    // a floor also runs under the edge of a pond or pit laid after it, so the soft edge shows the floor round it
+    const own = (x, y) => y >= 0 && y < h && x >= 0 && x < w && letters.includes(code(x, y));
+    const floorHas = (x, y) => own(x, y) || (under.includes(code(x, y)) && [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]].some(([dx, dy]) => own(x + dx, y + dy)));
+    if (name.startsWith('floor:')) layFloor(g, name.slice(6), w, h, floorHas);
     else if (name.startsWith('wall:')) layWalls(g, name.slice(5), w, h, has);
     else layTerrain(g, name, w, h, has);
   }
@@ -112,9 +115,9 @@ export const PROPS = {
   spire: ['terrain', 992, 672, 32, 64, [4, 2, 24, 16]],
   stump: ['terrain', 736, 576, 32, 32, [4, 2, 24, 14]],
   shroom: ['terrain', 832, 992, 32, 32, null],
-  shrooms: ['terrain', 864, 864, 64, 32, null],
+  shrooms: ['terrain', 864, 896, 32, 32, null],
   reeds: ['terrain', 832, 928, 32, 64, null],
-  flowers: ['terrain', 672, 352, 96, 32, null],
+  flowers: ['terrain', 672, 352, 96, 32, null, { keyGrass: true }],
   moai: ['terrain', 480, 384, 64, 96, [8, 4, 48, 30]],
   pillar: ['terrain', 448, 384, 32, 96, [2, 4, 28, 20]],
   vinepillar: ['terrain', 640, 384, 32, 96, [2, 4, 28, 20]],
@@ -122,28 +125,31 @@ export const PROPS = {
   bigrock: ['terrain', 576, 384, 64, 64, [4, 4, 56, 30]],
   waterfall: ['terrain', 672, 384, 96, 128, [0, 0, 96, 128]],
   bridge: ['terrain', 512, 512, 96, 64, null],
-  ruinwall: ['terrain', 608, 736, 96, 64, [0, 2, 96, 26]],
-  ruinwall2: ['terrain', 672, 736, 64, 64, [0, 2, 64, 26]],
+  ruinwall: ['terrain', 608, 736, 96, 96, [0, 2, 96, 26]],
+  ruinwall2: ['terrain', 704, 736, 64, 96, [0, 2, 64, 26]],
   ruincol: ['terrain', 768, 736, 32, 96, [2, 2, 28, 22]],
   ruincol2: ['terrain', 800, 736, 32, 96, [2, 2, 28, 22]],
-  chest: ['terrain', 608, 576, 32, 32, [2, 2, 28, 20]],
-  chestopen: ['terrain', 640, 576, 32, 32, [2, 2, 28, 20]],
-  sign: ['base', 192, 288, 32, 64, [6, 2, 20, 14]],
+  // 21,18 is the shut chest; 19,18 the one with its lid thrown back
+  chest: ['terrain', 672, 576, 32, 32, [2, 2, 28, 20]],
+  chestopen: ['terrain', 608, 576, 32, 32, [2, 2, 28, 20]],
+  // a wooden post with an arrow board nailed across it
+  sign: ['build', 960, 512, 32, 64, [6, 2, 20, 14], { parts: [['build', 960, 512, 32, 64, 0, 0], ['build', 768, 544, 32, 32, -6, -6]] }],
   cherry: ['misc', 224, 224, 128, 128, [44, 6, 40, 22]],
   deadtree: ['misc', 512, 0, 96, 96, [30, 4, 36, 20]],
   shelf: ['misc', 448, 128, 64, 96, [0, 0, 64, 40]],
   books: ['misc', 416, 352, 64, 96, [0, 0, 64, 40]],
   bed: ['misc', 0, 928, 64, 96, [4, 4, 56, 80]],
   bed2: ['misc', 320, 928, 64, 96, [4, 4, 56, 80]],
-  stove: ['misc', 192, 896, 64, 128, [0, 0, 64, 40]],
+  // the stovepipe column and the pans and oven beside it (not the boat's water above them)
+  stove: ['misc', 192, 896, 64, 128, [0, 0, 64, 40], { parts: [['misc', 192, 896, 32, 128, 0, 0], ['misc', 224, 928, 32, 96, 32, 32]] }],
   table: ['misc', 288, 352, 128, 96, [0, 8, 128, 70]],
   stool: ['misc', 128, 928, 32, 64, null],
-  barrel: ['misc', 736, 544, 32, 32, [2, 2, 28, 18]],
-  firebarrel: ['misc', 640, 608, 32, 32, [2, 2, 28, 20]],
+  barrel: ['misc', 736, 512, 32, 64, [2, 2, 28, 18]],
+  firebarrel: ['misc', 640, 576, 32, 64, [2, 2, 28, 20]],
   vending: ['misc', 640, 448, 64, 64, [0, 2, 64, 30]],
   vending2: ['misc', 704, 448, 64, 64, [0, 2, 64, 30]],
   terminal: ['misc', 672, 576, 32, 64, [0, 2, 32, 26]],
-  screen: ['misc', 896, 160, 96, 96, [0, 2, 96, 36]],
+  screen: ['misc', 736, 160, 96, 96, [0, 2, 96, 36]],
   glass: ['misc', 640, 256, 128, 96, [0, 2, 128, 30]],
   lamp: ['misc', 736, 672, 32, 96, [6, 2, 20, 14]],
   graffiti: ['misc', 640, 672, 96, 32, null],
@@ -152,25 +158,27 @@ export const PROPS = {
   tire: ['misc', 736, 640, 32, 32, [2, 2, 28, 18]],
   grave: ['misc', 704, 800, 32, 32, [2, 2, 28, 22]],
   grave2: ['misc', 736, 800, 32, 32, [2, 2, 28, 22]],
-  tomb: ['misc', 640, 768, 64, 128, [0, 2, 64, 60]],
-  vase: ['misc', 672, 960, 32, 32, [2, 2, 28, 20]],
+  tomb: ['misc', 640, 800, 64, 96, [0, 2, 64, 60]],
+  vase: ['misc', 672, 960, 32, 64, [2, 2, 28, 20]],
   plant: ['misc', 608, 960, 32, 64, [2, 2, 28, 20]],
-  stall: ['misc', 160, 512, 96, 96, [0, 0, 96, 40]],
+  // the whole stall with its striped roof (the left roof cell is drawn level with the others)
+  stall: ['misc', 160, 448, 96, 160, [0, 0, 96, 40], { parts: [['misc', 160, 448, 96, 160, 0, 0], ['misc', 192, 448, 32, 64, 0, 0]] }],
   crates: ['misc', 256, 640, 224, 64, [0, 0, 224, 40]],
   tent: ['build', 416, 512, 128, 160, [8, 2, 112, 60]],
-  torii: ['build', 768, 128, 224, 128, null],
+  torii: ['build', 768, 128, 224, 128, null, { clear: [[0, 0, 32, 64]] }],
   lantern: ['build', 800, 0, 32, 64, [4, 2, 24, 18]],
   komainu: ['build', 864, 256, 64, 96, [4, 2, 56, 34]],
   fence: ['build', 800, 352, 96, 32, [0, 4, 96, 20]],
   fence2: ['build', 896, 352, 96, 32, [0, 4, 96, 20]],
-  bigbarrels: ['build', 928, 256, 96, 96, [4, 2, 88, 40]],
+  // two barrels from the build sheet and a tall one from the base sheet (the sheet's own third barrel is cut by its edge)
+  bigbarrels: ['build', 928, 256, 96, 96, [4, 2, 88, 40], { parts: [['build', 928, 256, 64, 64, 0, 32], ['base', 576, 448, 32, 64, 64, 32]] }],
   innsign: ['build', 672, 608, 32, 32, null],
   swordsign: ['build', 544, 640, 32, 32, null],
   potsign: ['build', 576, 640, 32, 32, null],
   cart: ['build', 704, 608, 64, 64, [4, 2, 56, 30]],
   haycart: ['build', 672, 672, 96, 64, [4, 2, 88, 30]],
   torch: ['build', 928, 704, 32, 64, null],
-  lamppost: ['base', 384, 512, 32, 96, [6, 2, 20, 14]],
+  lamppost: ['misc', 736, 672, 32, 96, [6, 2, 20, 14]],
   well: ['base', 544, 384, 32, 64, [4, 4, 24, 20]],
   fountain: ['terrain', 544, 384, 32, 64, [4, 4, 24, 20]],
   spirecone: ['base', 512, 672, 96, 224, null],
@@ -201,8 +209,20 @@ const propCache = new Map();
 export function prop(name) {
   let c = propCache.get(name);
   if (c) return c;
-  const [at, x, y, w, h] = PROPS[name];
-  c = canvas(w, h); c.x.drawImage(atlas(at), x, y, w, h, 0, 0, w, h);
+  const [at, x, y, w, h, , opt = {}] = PROPS[name];
+  c = canvas(w, h);
+  if (opt.parts) for (const [pa, px, py, pw, ph, dx, dy] of opt.parts) c.x.drawImage(atlas(pa), px, py, pw, ph, dx, dy, pw, ph);
+  else c.x.drawImage(atlas(at), x, y, w, h, 0, 0, w, h);
+  for (const [cx, cy, cw, chh] of opt.clear || []) c.x.clearRect(cx, cy, cw, chh);
+  // flower cells come painted on a grass tile: take out the plain grass so they sit on any ground
+  if (opt.keyGrass) {
+    const [gx, gy] = TERRAIN.grass, gr = canvas(T, T); gr.x.drawImage(atlas('terrain'), (gx + 1) * T, (gy + 3) * T, T, T, 0, 0, T, T);
+    const gp = gr.x.getImageData(0, 0, T, T).data, pal = new Set();
+    for (let i = 0; i < gp.length; i += 4) pal.add((gp[i] << 16) | (gp[i + 1] << 8) | gp[i + 2]);
+    const d = c.x.getImageData(0, 0, w, h), p = d.data;
+    for (let i = 0; i < p.length; i += 4) if (pal.has((p[i] << 16) | (p[i + 1] << 8) | p[i + 2])) p[i + 3] = 0;
+    c.x.putImageData(d, 0, 0);
+  }
   propCache.set(name, c);
   return c;
 }

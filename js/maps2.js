@@ -13,7 +13,7 @@ def('interval', () => {
   const g = grid(32, 26, 'v');
   blob(g, 16, 13, 10, 7, 'F', 0.12, 3); blob(g, 16, 13, 11.5, 8.2, 'k', 0.18, 4); blob(g, 16, 13, 10, 7, 'F', 0.12, 3);
   path(g, [[16, 6], [16, 1]], 'F', 2); path(g, [[16, 20], [16, 24]], 'F', 2); blob(g, 16, 2, 3, 1.5, 'k', 0.1, 6); blob(g, 16, 24, 3, 1.4, 'k', 0.1, 7);
-  blob(g, 11, 16, 2, 1.1, 'w', 0.15, 9);
+  blob(g, 11, 16, 2, 1.1, 'w', 0.15, 9); rect(g, 9, 15, 4, 3, 'w'); // filled out to a plain pool: one-tile arms of water draw as broken rivulets
   return {
     name: ['時隙之間', 'The Hour Between'], era: 'interval', music: 'interval', base: 'void', order: ['rock', 'floor:flag', 'water'], rows: rows(g), stars: true, tint: 'interval',
     props: [['lamppost', 11, 8], ['lamppost', 21, 8], ['lamppost', 10, 19], ['lamppost', 21, 18], ['books', 22, 12], ['pillar', 14, 0], ['pillar', 18, 0], ['vending', 9, 10], ['plant', 12, 9]],

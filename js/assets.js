@@ -4,7 +4,8 @@
 export const ATLASES = ['terrain', 'base', 'build', 'misc'];
 export const MONS = ['bat', 'bee', 'big_worm', 'eyeball', 'ghost', 'man_eater_flower', 'pumpking', 'slime', 'small_worm', 'snake'];
 
-const load = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => { console.warn('missing picture', src); res(null); }; im.src = src; });
+// a picture that fails to arrive (a dropped connection) is asked for again twice before it is given up as missing
+const load = (src, tries = 3) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => { if (tries > 1) setTimeout(() => load(src, tries - 1).then(res), 300); else { console.warn('missing picture', src); res(null); } }; im.src = src; });
 export const CHAR_META = await (await fetch('assets/chars/meta.json')).json();
 // more LPC creatures (wolves, bears, spiders, imps and others), normalised to one layout by the build script
 export const MON2_META = await (await fetch('assets/mon2/meta.json')).json();

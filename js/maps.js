@@ -74,6 +74,8 @@ def('lantern', () => {
   const props = [], avoid = [[3, 4, 6, 6], [30, 4, 6, 6], [4, 19, 5, 6], [29, 20, 5, 6], [16, 0, 8, 10], [11, 10, 18, 12], [0, 13, 40, 5]];
   border(props, 40, 30, ['pine', 'oak', 'pine2', 'sapling'], 1, [[38, 13, 2, 5]], 11);
   scatter(props, g, 16, ['oak', 'cherry', 'sapling', 'bush'], ['g'], avoid, 21, 3);
+  // two trees stood right in front of the south-west cottage's door
+  for (let i = props.length - 1; i >= 0; i--) { const [n, x, y] = props[i]; if (y === 26 && x >= 3 && x <= 6 && (n === 'cherry' || n === 'oak')) props.splice(i, 1); }
   props.push(['stall', 13, 13], ['stall', 25, 13], ['crates', 14, 20], ['fountain', 19, 16], ['lamppost', 12, 11], ['lamppost', 27, 11], ['lamppost', 12, 20], ['lamppost', 27, 20],
     ['bigbarrels', 9, 7], ['cart', 27, 8], ['innsign', 35, 8], ['potsign', 12, 12], ['flowers', 21, 9], ['flowers', 15, 9], ['sign', 37, 13], ['well', 10, 24], ['reeds', 30, 27], ['reeds', 36, 26]);
   return {

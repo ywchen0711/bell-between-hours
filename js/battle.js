@@ -6,12 +6,12 @@
 import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js';
 import { F, addFx, tryMove, walkable, refreshParty } from './field.js';
 import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js';
-import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party } from './party.js';
+import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js';
 import { input } from './input.js';
 import { sfx, playMusic, currentSong } from './audio.js';
 import { L } from './i18n.js';
 import { UI, menu, pressKey } from './ui.js';
-import { animFrames, hasAnim, dirOf, MON } from './sprites.js';
+import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js';
 
 let B = null;
 export const inBattle = () => !!B;
@@ -24,7 +24,7 @@ function popNum(e, s, col = '#ffffff') {
   const x = e.x, y = e.y - (e.ht || 52);
   addFx((g, k) => { const yy = y - 18 * Math.min(1, k * 3) + (k > 0.3 ? 0 : 0); g.globalAlpha = k > 0.75 ? (1 - k) * 4 : 1; text(s, x, yy, col, { align: 'center', g, shadow: '#000' }); g.globalAlpha = 1; }, 55);
 }
-const FXCOL = { fire: ['#ffd060', '#ff6020'], wind: ['#d0ffd8', '#60e090'], bolt: ['#ffffa0', '#a0a0ff'], light: ['#fff8d0', '#ffd860'], dark: ['#d0a0ff', '#402060'], none: ['#ffffff', '#c0c8e0'] };
+const FXCOL = { ice: ['#e8fbff', '#60b0ff'], earth: ['#f0d898', '#806030'], fire: ['#ffd060', '#ff6020'], wind: ['#d0ffd8', '#60e090'], bolt: ['#ffffa0', '#a0a0ff'], light: ['#fff8d0', '#ffd860'], dark: ['#d0a0ff', '#402060'], none: ['#ffffff', '#c0c8e0'] };
 function burst(x, y, el = 'none', size = 1) {
   const [a, b] = FXCOL[el] || FXCOL.none;
   addFx((g, k) => {
@@ -57,7 +57,7 @@ function wave(el) {
 }
 // something flying from a to b
 async function shoot(a, b, kind) {
-  const n = 14, col = { fire: '#ff8030', bolt: '#ffffa0', arrow: '#e8d8b0', dark: '#a070ff', light: '#fff0a0' }[kind] || '#fff';
+  const n = 14, col = { fire: '#ff8030', bolt: '#ffffa0', arrow: '#e8d8b0', dark: '#a070ff', light: '#fff0a0', ice: '#c0f0ff', earth: '#d0b070', wind: '#c0ffd0' }[kind] || '#fff';
   const ax = a.x, ay = a.y - 26, bx = b.x, by = b.y - 24;
   addFx((g, k) => {
     const x = ax + (bx - ax) * k, y = ay + (by - ay) * k;
@@ -77,15 +77,15 @@ async function walkTo(e, x, y, frames = 16) {
   face(e, { x, y });
   for (let i = 1; i <= frames; i++) {
     e.x = sx + (x - sx) * i / frames; e.y = sy + (y - sy) * i / frames;
-    e.step = (e.step || 0) + 1; if (e.kind === 'hero' || !e.m.sprite.startsWith('m:')) e.frame = 1 + Math.floor(e.step / 2) % 8;
+    e.step = (e.step || 0) + 1; if (e.kind === 'hero' || e.m.sprite[0] !== 'm') e.frame = 1 + Math.floor(e.step / 2) % 8;
     await wait(1);
   }
-  if (e.kind === 'hero' || !e.m.sprite.startsWith('m:')) e.frame = 0;
+  if (e.kind === 'hero' || e.m.sprite[0] !== 'm') e.frame = 0;
 }
 // play a sprite's action frames
 async function act(e, anim, hitAt = 0.5, onHit) {
-  const sprite = e.kind === 'hero' ? e.sprite : e.m.sprite.slice(2);
-  if (e.kind === 'foe' && e.m.sprite.startsWith('m:')) {
+  const sprite = e.kind === 'hero' ? e.sprite : monName(e.m.sprite);
+  if (e.kind === 'foe' && e.m.sprite[0] === 'm') {
     const seq = MON[sprite].atk;
     for (let i = 0; i < seq.length * 4; i++) { e.atkFrame = Math.floor(i / 4); if (onHit && i === Math.floor(seq.length * 4 * hitAt)) await onHit(); await wait(1); }
     e.atkFrame = undefined;
@@ -100,10 +100,16 @@ async function act(e, anim, hitAt = 0.5, onHit) {
 
 // ---------- numbers ----------
 export function heroStats(p) { const s = stats(p.h); const b = p.buff || {}; return { ...s, atk: s.atk * (b.pow || 1), def: s.def * (b.def || 1) }; }
-function foeStat(f, k) { return f.m[k] * ((f.buff && f.buff[k]) || 1); }
+function foeStat(f, k) { return f.m[k] * ((f.buff && f.buff[k]) || 1) * (k === 'def' && f.status && f.status.brk ? 0.7 : 1); }
+// how fast a gauge fills: haste and slow change it
+const rate = (st) => (st.haste ? 1.5 : 1) * (st.slow ? 0.5 : 1);
+// statuses that last a few turns count down at the start of their owner's turn
+function tickTimed(st) { for (const k of ['haste', 'slow', 'barrier', 'regen', 'brk']) if (st[k] > 0 && --st[k] <= 0) delete st[k]; }
+const STATUS_WORD = { haste: ['加速', 'Haste'], slow: ['遲緩', 'Slow'], barrier: ['護盾', 'Shield'], regen: ['再生', 'Regen'], brk: ['破防', 'Break'] };
 function elemMul(target, el) {
   if (!el) return 1;
-  if (target.kind === 'foe') { if (target.m.weak.includes(el)) return 1.5; if (target.m.res.includes(el)) return 0.5; }
+  if (target.kind === 'foe') { if ((target.weak || target.m.weak).includes(el)) return 1.5; if ((target.res || target.m.res).includes(el)) return 0.5; }
+  if (target.kind === 'hero' && hasFx(target.h, 'res' + el)) return 0.5;
   return 1;
 }
 function heroDamage(src, tgt, t, part = 1) {
@@ -112,18 +118,25 @@ function heroDamage(src, tgt, t, part = 1) {
   if (t.kind === 'phys') base = s.reduce((a, x) => a + x.atk, 0) / s.length * t.pow * (src.length > 1 ? 1.15 : 1) - foeStat(tgt, 'def') * 0.6;
   else { const st = t.stat === 'pow' ? 'atk' : 'mag'; base = s.reduce((a, x) => a + (st === 'atk' ? x.atk * 0.8 : x.mag * 1.25), 0) / s.length * t.pow * (src.length > 1 ? 1.15 : 1) - foeStat(tgt, 'mdf') * 0.5; }
   let d = Math.max(1, base) * rand(0.92, 1.08) * elemMul(tgt, t.el) * part;
+  // Rimeback's ice armour turns blows aside until fire melts it
+  if (tgt.status && tgt.status.iced && t.kind === 'phys' && t.el !== 'fire') d *= 0.35;
   let crit = false;
-  if (t.kind === 'phys' && Math.random() < 0.06) { d *= 1.5; crit = true; }
+  const critP = src.some((p) => hasFx(p.h, 'crit')) ? 0.2 : 0.06;
+  if (t.kind === 'phys' && Math.random() < critP) { d *= 1.5; crit = true; }
   return { d: Math.max(1, Math.round(d)), crit };
 }
 function foeDamage(f, p, mv) {
   const hs = heroStats(p);
   let base = mv.kind === 'phys' ? foeStat(f, 'pow') * 1.6 * mv.pow - hs.def * 0.6 : foeStat(f, 'mag') * 1.6 * mv.pow - hs.mdf * 0.5;
   if (p.guard) base *= 0.6;
+  if (p.h.status.barrier) base *= 0.6;
+  base *= elemMul(p, mv.el);
   return Math.max(1, Math.round(Math.max(1, base) * rand(0.9, 1.1)));
 }
 function hurtFoe(f, d, crit, el) {
-  f.hp = Math.max(0, f.hp - d); f.flash = 6; sfx(crit ? 'crit' : el === 'fire' ? 'fire' : el === 'bolt' ? 'bolt' : 'hit');
+  f.hp = Math.max(0, f.hp - d); f.flash = 6;
+  if (f.status.iced && el === 'fire') { delete f.status.iced; popNum({ x: f.x, y: f.y - 28, ht: f.ht }, L('冰甲融化了！', 'Ice armour melts!'), '#ffb060'); }
+  if (f.charging && el === 'bolt') { f.charging = false; f.status.stun = true; popNum({ x: f.x, y: f.y - 28, ht: f.ht }, L('發條被電斷了！', 'The spring snaps!'), '#ffff80'); } sfx(crit ? 'crit' : el === 'fire' ? 'fire' : el === 'bolt' ? 'bolt' : 'hit');
   popNum(f, String(d), crit ? '#ffe060' : elemMul(f, el) > 1 ? '#ffb060' : elemMul(f, el) < 1 ? '#a0a8c0' : '#ffffff');
   if (elemMul(f, el) > 1) popNum({ x: f.x, y: f.y - 14, ht: f.ht }, L('弱點！', 'Weak!'), '#ffd060');
   shakeOne(f);
@@ -158,15 +171,38 @@ export function startBattle(group, opts = {}) {
     const prevSong = currentSong;
     B = { group, foes, heroes: F.party.slice(), waiters: [], resolve, over: false, boss: !!group.boss, target: null, cmdFor: null, prevSong, noFlee: !!group.boss || opts.noFlee, log: '' };
     F.battle = B;
-    for (const f of foes) {
-      Object.assign(f, { hp: f.m.hp, maxhp: f.m.hp, gauge: rand(0, 50), buff: {}, status: {}, ht: (f.m.sprite.startsWith('m:') ? 46 : 58) * (f.m.scale || 1), goal: null });
-      f.acts = f.m.acts.slice();
+    for (const f of foes) initFoe(f);
+    for (const p of B.heroes) {
+      Object.assign(p, { gauge: p.h.hp > 0 ? rand(20, 70) : 0, buff: {}, guard: false, ht: 56, anim: p.h.hp > 0 ? 'walk' : 'hurt', frame: p.h.hp > 0 ? 0 : 5 });
+      for (const k of ['haste', 'slow', 'barrier', 'regen']) delete p.h.status[k];
+      if (p.h.hp > 0 && hasFx(p.h, 'haste')) p.h.status.haste = 4;
+      if (p.h.hp > 0 && hasFx(p.h, 'first')) p.gauge = 100;
     }
-    for (const p of B.heroes) Object.assign(p, { gauge: p.h.hp > 0 ? rand(20, 70) : 0, buff: {}, guard: false, ht: 56, anim: p.h.hp > 0 ? 'walk' : 'hurt', frame: p.h.hp > 0 ? 0 : 5 });
-    if (!opts.keepMusic) playMusic(group.boss ? (group.list[0] === 'hush' ? 'lastboss' : 'boss') : 'battle');
+    // the monster book remembers every kind you have met
+    for (const f of foes) S.seen[f.mid] = 1;
+    const lead = foes[0] && foes[0].m;
+    if (!opts.keepMusic) playMusic(group.boss ? (lead.music || (group.list[0] === 'hush' ? 'lastboss' : 'boss')) : (F.map.battleMusic || 'battle'));
     sfx('encounter');
     run();
   });
+}
+function initFoe(f) {
+  const sp = monName(f.m.sprite), mon = f.m.sprite[0] === 'm' ? MON[sp] : null;
+  const ht = mon && mon.fw ? (mon.fh - mon.pad) * 0.8 : f.m.sprite[0] === 'm' ? 46 : 58;
+  Object.assign(f, { hp: f.m.hp, maxhp: f.m.hp, gauge: rand(0, 50), buff: {}, status: {}, ht: ht * (f.m.scale || 1), goal: null, weak: f.m.weak.slice(), res: f.m.res.slice(), turns: 0, charging: false });
+  f.acts = f.m.acts.slice();
+  if (f.m.mech === 'icearmor') f.status.iced = true;
+}
+// a summoner calls another monster into the fight, next to itself
+function summonFoe(by, mid) {
+  const a = Math.random() * Math.PI * 2;
+  let x = by.x + Math.cos(a) * 60, y = by.y + Math.sin(a) * 36;
+  if (!walkable(x, y)) { x = by.x + (by.x > centre(B.heroes).x ? 40 : -40); y = by.y + 30; }
+  const f = { kind: 'foe', mid, m: MONSTERS[mid], group: B.group, x, y, home: [x, y], dir: by.dir, step: 0, t: 0, wt: 0, alpha: 0 };
+  initFoe(f); f.gauge = 0; f.summoned = true;
+  F.foes.push(f); F.ents.push(f); B.foes.push(f);
+  S.seen[mid] = 1;
+  return f;
 }
 async function placeParty() {
   const C = centre(B.foes), lead = B.heroes[0];
@@ -207,19 +243,27 @@ async function run() {
     const ready = [];
     for (const p of B.heroes) {
       if (p.h.hp <= 0) { p.gauge = 0; continue; }
-      if (p.gauge < 100) p.gauge = Math.min(100, p.gauge + (heroStats(p).spd + 10) * 0.045 * (F.speed || 1));
+      if (p.gauge < 100) p.gauge = Math.min(100, p.gauge + (heroStats(p).spd + 10) * 0.045 * rate(p.h.status) * (F.speed || 1));
       else ready.push(p);
     }
     for (const f of liveFoes()) {
-      if (f.gauge < 100) f.gauge = Math.min(100, f.gauge + (foeStat(f, 'spd') + 10) * 0.045 * (F.speed || 1));
+      if (f.alpha !== undefined && f.alpha < 1 && f.summoned) f.alpha = Math.min(1, f.alpha + 0.05);
+      if (f.gauge < 100) f.gauge = Math.min(100, f.gauge + (foeStat(f, 'spd') + 10) * 0.045 * rate(f.status) * (F.speed || 1));
     }
     const foe = liveFoes().find((f) => f.gauge >= 100);
-    if (foe) { foe.gauge = 0; if (foe.status.stun) { delete foe.status.stun; popNum(foe, L('麻痺', 'Stunned'), '#ffff80'); await wait(20); } else await foeTurn(foe); continue; }
+    if (foe) {
+      foe.gauge = 0; tickTimed(foe.status);
+      if (foe.status.stun || foe.status.freeze) { const w = foe.status.freeze ? L('凍結', 'Frozen') : L('麻痺', 'Stunned'); delete foe.status.stun; delete foe.status.freeze; popNum(foe, w, '#ffff80'); await wait(20); }
+      else { await foeTurn(foe); await afterHits(); }
+      continue;
+    }
     if (ready.length) {
       const p = ready[0];
-      // poison bites at the start of a turn
+      tickTimed(p.h.status);
+      // poison bites at the start of a turn; regeneration heals
       if (p.h.status.poison) { const d = Math.max(1, Math.round(stats(p.h).maxhp * 0.06)); hurtHero(p, d); await wait(16); if (p.h.hp <= 0) continue; }
-      if (p.h.status.stun) { delete p.h.status.stun; p.gauge = 0; popNum(p, L('麻痺', 'Stunned'), '#ffff80'); await wait(20); continue; }
+      if (p.h.status.regen || hasFx(p.h, 'regen')) { heal(p, Math.max(1, Math.round(stats(p.h).maxhp * 0.06))); await wait(10); }
+      if (p.h.status.stun || p.h.status.freeze) { const w = p.h.status.freeze ? L('凍結', 'Frozen') : L('麻痺', 'Stunned'); delete p.h.status.stun; delete p.h.status.freeze; p.gauge = 0; popNum(p, w, '#ffff80'); await wait(20); continue; }
       const done = await heroTurn(p);
       if (done === 'fled') return;
     }
@@ -244,12 +288,13 @@ function combosFor(p) {
     const who = c.who.map((w) => B.heroes.find((q) => q.id === w));
     if (who.some((q) => !q || q.h.hp <= 0)) continue;
     if (!who.every((q, i) => knows(q.h, c.need[i]))) continue;
-    out.push({ id, c, who, ok: who.every((q) => q.gauge >= 100) && who.every((q, i) => q.h.mp >= c.mp[i]) });
+    out.push({ id, c, who, ok: who.every((q) => q.gauge >= 100) && who.every((q, i) => q.h.mp >= mpCost(q, c.mp[i])) });
   }
   return out;
 }
 import { LEARN } from './data.js';
 const TECHS_BY_INDEX = (id, i) => LEARN[id][i];
+const mpCost = (p, n) => (hasFx(p.h, 'halfmp') ? Math.ceil(n / 2) : n);
 
 async function heroTurn(p) {
   B.cmdFor = p;
@@ -265,7 +310,7 @@ async function heroTurn(p) {
     if (c === 1) {
       const list = techsOf(p.h).map((id) => ({ id, t: TECHS[id] }));
       const combos = combosFor(p);
-      const items = [...list.map(({ id, t }) => ({ label: t.name, right: t.mp, disabled: p.h.mp < t.mp })), ...combos.map((k) => ({ label: '★' + k.c.name, right: k.who.map((q) => nameOf(q.h)[0]).join(''), disabled: !k.ok, color: '#ffd870' }))];
+      const items = [...list.map(({ id, t }) => ({ label: t.name, right: mpCost(p, t.mp), disabled: p.h.mp < mpCost(p, t.mp) })), ...combos.map((k) => ({ label: '★' + k.c.name, right: k.who.map((q) => nameOf(q.h)[0]).join(''), disabled: !k.ok, color: '#ffd870' }))];
       const desc = (i) => (i < list.length ? list[i].t.desc + areaWord(list[i].t) : combos[i - list.length].c.desc + areaWord(combos[i - list.length].c));
       const k = await menu(items, { x: W - 250, y: 60, w: 230, maxRows: 8, title: L('技', 'Techniques'), drawExtra: (i) => descLine(desc(i)) });
       if (k < 0) continue;
@@ -273,13 +318,13 @@ async function heroTurn(p) {
         const { id, t } = list[k];
         const tgt = await pickTarget(p, t);
         if (!tgt) continue;
-        B.cmdFor = null; p.gauge = 0; p.h.mp -= t.mp; await doTech(p, id, t, tgt); return;
+        B.cmdFor = null; p.gauge = 0; p.h.mp -= mpCost(p, t.mp); await doTech(p, id, t, tgt); return;
       }
       const cb = combos[k - list.length];
       const tgt = await pickTarget(p, cb.c, cb.who);
       if (!tgt) continue;
       B.cmdFor = null;
-      cb.who.forEach((q, i) => { q.gauge = 0; q.h.mp -= cb.c.mp[i]; });
+      cb.who.forEach((q, i) => { q.gauge = 0; q.h.mp -= mpCost(q, cb.c.mp[i]); });
       await doCombo(cb.who, cb.c, tgt); return;
     }
     if (c === 2) {
@@ -288,10 +333,12 @@ async function heroTurn(p) {
       const k = await menu(ids.map((id) => ({ label: ITEMS[id].name, right: count(id) })), { x: W - 230, y: 60, w: 210, maxRows: 8, title: L('道具', 'Items'), drawExtra: (i) => descLine(ITEMS[ids[i]].desc) });
       if (k < 0) continue;
       const it = ITEMS[ids[k]];
-      const tgt = it.full ? B.heroes[0] : await pickAlly(p, !!it.revive);
+      if (it.smoke && B.noFlee) { sfx('buzz'); continue; }
+      const tgt = it.full || it.smoke ? B.heroes[0] : it.bomb ? (it.bomb.area === 'all' ? await pickFrom(liveFoes(), p, { area: 'all' }, null, true) : await pickFrom(liveFoes(), p, { area: 'circle', r: 64 })) : await pickAlly(p, !!it.revive);
       if (!tgt) continue;
+      if (it.smoke) { B.cmdFor = null; p.gauge = 0; addItem(ids[k], -1); await flee(); return 'fled'; }
       B.cmdFor = null; p.gauge = 0; addItem(ids[k], -1);
-      await useItem(p, it, tgt); return;
+      await useItem(p, it, tgt); await afterHits(); return;
     }
     if (c === 3) {
       B.cmdFor = null; p.gauge = 0;
@@ -362,15 +409,19 @@ async function heroAttack(p, t) {
 async function doTech(p, id, t, tgt) {
   B.log = t.name;
   const H = HEROES[p.id];
-  if (t.kind === 'heal') {
+  if (t.kind === 'heal' || t.kind === 'support') {
     face(p, tgt);
-    await act(p, 'spellcast', 0.6, async () => {
-      sfx('heal');
-      const amount = (q) => Math.round(heroStats(p).mag * t.pow * 1.5 + 20);
-      if (t.area === 'allies') for (const q of B.heroes.filter((q) => q.h.hp > 0)) heal(q, amount(q));
-      else if (tgt.h.hp > 0 || t.revive) heal(tgt, tgt.h.hp > 0 ? amount(tgt) : Math.round(stats(tgt.h).maxhp * 0.3));
-    });
+    await act(p, 'spellcast', 0.6, async () => { helpFriends([p], t, tgt); });
     B.log = ''; return;
+  }
+  if (t.kind === 'steal') {
+    await approach(p, tgt, 24);
+    await act(p, H.atkAnim, 0.5, async () => {
+      const got = stealFrom(tgt);
+      if (got) { sfx('chest'); popNum(tgt, L('偷到', 'Got ') + ITEMS[got].name, '#a0ffa0'); }
+      else { sfx('miss'); popNum(tgt, L('沒偷到', 'Nothing'), '#c0c0d0'); }
+    });
+    await goHome(p); B.log = ''; return;
   }
   const hits = t.hits || 1;
   if (t.area === 'self' || (t.area === 'one' && t.kind === 'phys' && H.melee) || (t.area === 'line' && H.melee)) {
@@ -383,7 +434,7 @@ async function doTech(p, id, t, tgt) {
       p.alpha = 0.6; sfx('slash');
       await walkTo(p, ex, ey, 10);
       p.alpha = 1;
-      for (const f of targets) { slashFx(f.x, f.y - 24); const { d, crit } = heroDamage([p], f, t); hurtFoe(f, d, crit, t.el); }
+      for (const f of targets) { slashFx(f.x, f.y - 24); const { d, crit } = heroDamage([p], f, t); hurtFoe(f, d, crit, t.el); drainTo([p], d, t); afterHit(f, t); }
       await wait(10);
       await goHome(p);
     } else if (t.area === 'self') {
@@ -391,13 +442,13 @@ async function doTech(p, id, t, tgt) {
       const spot = { x: p.x, y: p.y };
       for (const dir of ['d', 'l', 'u', 'r']) { p.dir = dir; p.anim = 'slash'; p.frame = 3; await wait(3); }
       sfx('slash'); ring(spot.x, spot.y - 10, t.r, t.el);
-      for (const f of reach('self', spot, spot, t.r)) { const { d, crit } = heroDamage([p], f, t); hurtFoe(f, d, crit, t.el); }
+      for (const f of reach('self', spot, spot, t.r)) { const { d, crit } = heroDamage([p], f, t); hurtFoe(f, d, crit, t.el); drainTo([p], d, t); afterHit(f, t); }
       p.anim = 'walk'; p.frame = 0;
       await wait(10);
       await goHome(p);
     } else {
       await approach(p, tgt);
-      await act(p, 'slash', 0.5, async () => { burst(tgt.x, tgt.y - 24, t.el || 'light'); const { d, crit } = heroDamage([p], tgt, t); hurtFoe(tgt, d, crit, t.el); });
+      await act(p, HEROES[p.id].atkAnim, 0.5, async () => { burst(tgt.x, tgt.y - 24, t.el || 'light'); const { d, crit } = heroDamage([p], tgt, t); hurtFoe(tgt, d, crit, t.el); drainTo([p], d, t); afterHit(tgt, t); });
       await goHome(p);
     }
   } else {
@@ -412,7 +463,7 @@ async function doTech(p, id, t, tgt) {
       else if (t.el === 'bolt') bolt(tgt.x, tgt.y - 10);
       else await shoot(p, tgt, t.el);
       for (let k = 0; k < hits; k++) {
-        for (const f of targets) { if (f.hp <= 0) continue; if (t.el === 'bolt') bolt(f.x, f.y - 10); else burst(f.x, f.y - 24, t.el); const { d, crit } = heroDamage([p], f, t); hurtFoe(f, d, crit, t.el); if (t.stun && Math.random() < t.stun && !f.m.boss) f.status.stun = true; }
+        for (const f of targets) { if (f.hp <= 0) continue; if (t.el === 'bolt') bolt(f.x, f.y - 10); else burst(f.x, f.y - 24, t.el); if (t.kind === 'debuff' && !t.pow) { afterHit(f, t); continue; } const { d, crit } = heroDamage([p], f, t.kind === 'debuff' ? { ...t, kind: 'mag' } : t); hurtFoe(f, d, crit, t.el); drainTo([p], d, t); afterHit(f, t); }
         if (k < hits - 1) { await wait(10); if (t.kind === 'phys') await shoot(p, tgt, H.shot); }
       }
     });
@@ -420,8 +471,42 @@ async function doTech(p, id, t, tgt) {
   B.log = '';
   await afterHits();
 }
+// healing and helping: used by techniques, combined techniques and the field menu's rules
+function helpFriends(src, t, tgt) {
+  sfx(t.kind === 'heal' ? 'heal' : 'buff');
+  const mag = src.reduce((a, q) => a + heroStats(q).mag, 0) / src.length * (src.length > 1 ? 1.15 : 1);
+  const amount = Math.round(mag * (t.pow || 0) * 1.5 + 20);
+  const list = t.area === 'allies' ? B.heroes.filter((q) => q.h.hp > 0 || t.revive) : [tgt];
+  for (const q of list) {
+    if (q.h.hp <= 0 && !t.revive) continue;
+    if (t.kind === 'heal') heal(q, q.h.hp > 0 ? amount : Math.round(stats(q.h).maxhp * (t.area === 'allies' ? 0.5 : 0.3)));
+    if (t.cure) { delete q.h.status.poison; delete q.h.status.slow; }
+    for (const [k, n] of Object.entries(t.fx || {})) { q.h.status[k] = n + 1; popNum({ x: q.x, y: q.y - 14, ht: q.ht }, L(STATUS_WORD[k][0], STATUS_WORD[k][1]), '#a0e0ff'); }
+    if (t.kind !== 'heal') sparkle(q.x, q.y);
+  }
+}
+function stealFrom(f) {
+  if (f.stolen) return null;
+  const pool = [...(f.m.drops || []), ...(f.m.drop ? [f.m.drop] : [])];
+  if (!pool.length || Math.random() < (f.m.boss ? 0.5 : 0.25)) return null;
+  f.stolen = true;
+  const id = pool[Math.floor(Math.random() * pool.length)][0];
+  addItem(id); return id;
+}
+// what a hit does besides damage: stun, freeze, slow, break
+function afterHit(f, t) {
+  if (f.hp <= 0) return;
+  if (t.stun && Math.random() < t.stun && !f.m.boss) f.status.stun = true;
+  if (t.freeze && Math.random() < t.freeze && !f.m.boss) { f.status.freeze = true; popNum({ x: f.x, y: f.y - 14, ht: f.ht }, L('凍結', 'Frozen'), '#c0f0ff'); }
+  for (const [k, n] of Object.entries(t.fx || {})) { if (k === 'slow' || k === 'brk') { f.status[k] = n + 1; popNum({ x: f.x, y: f.y - 14, ht: f.ht }, L(STATUS_WORD[k][0], STATUS_WORD[k][1]), '#c0a0ff'); } }
+}
+function drainTo(src, d, t) { if (!t.drain) return; const k = Math.round(d * t.drain / src.length); for (const q of src) if (q.h.hp > 0) heal(q, k); }
 async function doCombo(who, c, tgt) {
   B.log = '★ ' + c.name; sfx('special');
+  if (c.kind === 'heal' || c.kind === 'support') {
+    await Promise.all(who.map((q) => { face(q, tgt); return act(q, 'spellcast', 0.9); }));
+    helpFriends(who, c, tgt); wave('wind'); await wait(20); B.log = ''; return;
+  }
   const user = centre(who);
   const targets = c.area === 'all' ? liveFoes() : reachFrom(c, user, tgt);
   // everyone strikes a pose together
@@ -436,7 +521,7 @@ async function doCombo(who, c, tgt) {
   }
   if (c.area === 'all') wave(c.el); else if (c.area === 'circle') { ring(tgt.x, tgt.y - 10, c.r, c.el); ring(tgt.x, tgt.y - 10, c.r * 0.6, c.el); }
   sfx(c.el === 'fire' ? 'fire' : c.el === 'bolt' ? 'bolt' : 'crit');
-  for (const f of targets) { if (c.el === 'bolt') bolt(f.x, f.y - 10); burst(f.x, f.y - 24, c.el, 1.4); const { d, crit } = heroDamage(who, f, c); hurtFoe(f, d, crit, c.el); }
+  for (const f of targets) { if (c.el === 'bolt') bolt(f.x, f.y - 10); burst(f.x, f.y - 24, c.el, 1.4); const { d, crit } = heroDamage(who, f, c); hurtFoe(f, d, crit, c.el); drainTo(who, d, c); afterHit(f, c); }
   await wait(16);
   if (ren) await goHome(ren);
   B.log = '';
@@ -448,6 +533,14 @@ async function useItem(p, it, tgt) {
     sfx('heal');
     if (it.full) for (const q of B.heroes) { const s = stats(q.h); q.h.hp = s.maxhp; q.h.mp = s.maxmp; q.anim = 'walk'; q.frame = 0; sparkle(q.x, q.y); }
     else if (it.revive) { if (tgt.h.hp <= 0) heal(tgt, Math.round(stats(tgt.h).maxhp * it.revive)); }
+    else if (it.bomb) {
+      const targets = it.bomb.area === 'all' ? liveFoes() : reach('circle', p, tgt, 64);
+      if (it.bomb.area === 'all') wave(it.bomb.el); else ring(tgt.x, tgt.y - 10, 64, it.bomb.el);
+      sfx('boom');
+      for (const f of targets) { burst(f.x, f.y - 24, it.bomb.el, 1.2); hurtFoe(f, Math.round(it.bomb.pow * rand(0.9, 1.1) * elemMul(f, it.bomb.el)), false, it.bomb.el); }
+    }
+    else if (it.haste && tgt.h.hp > 0) { tgt.h.status.haste = it.haste + 1; popNum(tgt, L('加速', 'Haste'), '#a0e0ff'); sparkle(tgt.x, tgt.y); }
+    else if (it.cure && tgt.h.hp > 0) { delete tgt.h.status.poison; delete tgt.h.status.slow; if (it.heal) heal(tgt, it.heal); else sparkle(tgt.x, tgt.y); }
     else if (it.heal && tgt.h.hp > 0) heal(tgt, it.heal);
     else if (it.mp && tgt.h.hp > 0) { tgt.h.mp = Math.min(stats(tgt.h).maxmp, tgt.h.mp + it.mp); popNum(tgt, '+' + it.mp + ' MP', '#a0c8ff'); sparkle(tgt.x, tgt.y); }
   });
@@ -463,11 +556,26 @@ async function afterHits() {
 }
 
 // ---------- a monster's turn ----------
+const SHIFT = ['fire', 'ice', 'bolt', 'wind', 'light', 'earth'];
 async function foeTurn(f) {
+  f.turns++;
   let id = f.acts[Math.floor(Math.random() * f.acts.length)];
-  // the very last one gets faster when hurt
-  if (f.m.final && f.hp < f.maxhp * 0.5 && !f.enraged) { f.enraged = true; f.buff.spd = 1.35; B.log = L('寂靜睜大了眼睛……', 'Hush opens its eye wide...'); await wait(50); }
-  if (id === 'howl' && f.buff.pow) id = 'frenzy';
+  // the very last ones get faster when hurt
+  if (f.m.final && f.hp < f.maxhp * 0.5 && !f.enraged) { f.enraged = true; f.buff.spd = 1.35; B.log = f.mid === 'hush' ? L('寂靜睜大了眼睛……', 'Hush opens its eye wide...') : L(`${f.m.name}發出無聲的尖叫……`, `${f.m.name} lets out a soundless scream...`); await wait(50); }
+  if (f.m.boss && !f.m.final && f.hp < f.maxhp * 0.35 && !f.enraged && f.m.hp >= 12000) { f.enraged = true; f.buff.spd = 1.2; popNum(f, L('狂暴', 'Enraged'), '#ff8060'); await wait(30); }
+  // a wound-up machine lets everything go at once
+  if (f.charging) { f.charging = false; id = 'overclock'; }
+  // the Grief Engine (and the last foes) keep changing what hurts them
+  if (f.m.mech === 'shift' && f.turns % 2 === 1) {
+    const el = SHIFT[(SHIFT.indexOf(f.weak[0]) + 1 + Math.floor(Math.random() * (SHIFT.length - 1))) % SHIFT.length];
+    f.res = f.m.res.filter((e) => e !== el); f.weak = [el];
+    popNum({ x: f.x, y: f.y - 30, ht: f.ht }, L(`弱點變成「${ELEM[el][0]}」`, `Now weak to ${ELEM[el][1]}`), '#ffd060'); await wait(30);
+  }
+  if (id === 'icearmor' && f.status.iced) id = 'maul';
+  if (id === 'summon' && (liveFoes().length >= (f.m.maxFoes || 3) || !f.m.summon)) id = f.acts.find((a) => MOVES[a].kind !== 'summon' && MOVES[a].kind !== 'buff') || 'hit';
+  if (id === 'windup' && f.turns < 2) id = 'hit';
+  if ((id === 'mendfoe' || id === 'mendself') && !liveFoes().some((o) => o.hp < o.maxhp * 0.7)) id = 'shade' in MOVES && f.acts.includes('shade') ? 'shade' : 'hit';
+  if ((id === 'howl' || id === 'roar') && f.buff.pow) id = 'frenzy';
   if (id === 'harden' && f.buff.def) id = 'hit';
   const mv = MOVES[id], heroes = liveHeroes();
   if (!heroes.length) return;
@@ -478,11 +586,31 @@ async function foeTurn(f) {
     f.buff[mv.buff] = 1.35; popNum(f, mv.buff === 'pow' ? L('力量上升', 'Power up') : L('防禦上升', 'Defence up'), '#ffd080');
     await wait(20); B.log = ''; return;
   }
+  if (mv.kind === 'charge') {
+    sfx('switch'); await act(f, 'spellcast', 0.5); f.charging = true;
+    popNum(f, L('嘎啦嘎啦……（用雷打斷它！）', 'Clack clack... (thunder stops it!)'), '#ffe080'); await wait(40); B.log = ''; return;
+  }
+  if (mv.kind === 'armor') {
+    sfx('ice'); await act(f, 'spellcast', 0.5); f.status.iced = true;
+    popNum(f, L('冰甲（怕火）', 'Ice armour (fire melts it)'), '#c0f0ff'); await wait(30); B.log = ''; return;
+  }
+  if (mv.kind === 'summon') {
+    sfx('rift'); await act(f, 'spellcast', 0.5);
+    const mid = f.m.summon[Math.floor(Math.random() * f.m.summon.length)], n = Math.min(2, (f.m.maxFoes || 3) - liveFoes().length);
+    for (let k = 0; k < n; k++) { const o = summonFoe(f, mid); face(o, centre(B.heroes)); o.home = [o.x, o.y]; }
+    await wait(30); B.log = ''; return;
+  }
+  if (mv.kind === 'healfoe') {
+    sfx('heal'); await act(f, 'spellcast', 0.5);
+    const list = id === 'mendself' ? [f] : liveFoes();
+    for (const o of list) { const n = Math.round(o.maxhp * mv.pow * (o.m.boss ? 0.25 : 1)); o.hp = Math.min(o.maxhp, o.hp + n); popNum(o, '+' + n, '#90ffb0'); sparkle(o.x, o.y); }
+    await wait(20); B.log = ''; return;
+  }
   const targets = mv.area === 'all' ? heroes : mv.area === 'line' ? heroesInLine(f, tgt) : [tgt];
   if (mv.melee && mv.area !== 'line') {
     await approach(f, tgt, 30);
     for (let k = 0; k < (mv.hits || 1); k++) {
-      await act(f, hasAnim(f.m.sprite.slice(2), 'slash') ? 'slash' : 'thrust', 0.5, async () => { slashFx(tgt.x, tgt.y - 24); if (tgt.h.hp > 0) hitHero(f, tgt, mv); });
+      await act(f, hasAnim(monName(f.m.sprite), 'slash') ? 'slash' : 'thrust', 0.5, async () => { slashFx(tgt.x, tgt.y - 24); if (tgt.h.hp > 0) hitHero(f, tgt, mv); });
     }
     await goHome(f);
   } else if (mv.melee && mv.area === 'line') {
@@ -512,9 +640,17 @@ function hitHero(f, p, mv) {
   if (p.h.hp <= 0) return;
   const d = foeDamage(f, p, mv);
   hurtHero(p, d);
-  if (mv.drain) { f.hp = Math.min(f.maxhp, f.hp + d); popNum(f, '+' + d, '#90ffb0'); }
-  if (mv.poison && Math.random() < mv.poison && p.h.hp > 0) { p.h.status.poison = true; popNum({ x: p.x, y: p.y - 14, ht: 56 }, L('中毒', 'Poison'), '#c080ff'); }
-  if (mv.stun && Math.random() < mv.stun && p.h.hp > 0) { p.h.status.stun = true; }
+  if (mv.drain) { const k = mv.area === 'all' ? Math.round(d * 0.5) : d; f.hp = Math.min(f.maxhp, f.hp + k); popNum(f, '+' + k, '#90ffb0'); }
+  const tag = (w, col) => popNum({ x: p.x, y: p.y - 14, ht: 56 }, w, col);
+  if (mv.poison && Math.random() < mv.poison && p.h.hp > 0 && !hasFx(p.h, 'nopoison')) { p.h.status.poison = true; tag(L('中毒', 'Poison'), '#c080ff'); }
+  if (mv.stun && Math.random() < mv.stun && p.h.hp > 0 && !hasFx(p.h, 'nostun')) { p.h.status.stun = true; }
+  if (mv.freeze && Math.random() < mv.freeze && p.h.hp > 0 && !hasFx(p.h, 'nostun')) { p.h.status.freeze = true; tag(L('凍結', 'Frozen'), '#c0f0ff'); }
+  if (mv.slow && Math.random() < mv.slow && p.h.hp > 0) { p.h.status.slow = 3; tag(L('遲緩', 'Slow'), '#c0a0ff'); }
+  if (mv.erase && p.h.hp > 0) { for (const k of ['haste', 'barrier', 'regen']) delete p.h.status[k]; p.buff = {}; }
+  // a counter badge strikes straight back at whoever hit
+  if (mv.melee && p.h.hp > 0 && f.hp > 0 && hasFx(p.h, 'counter') && Math.random() < 0.35) {
+    const { d: cd } = heroDamage([p], f, { kind: 'phys', pow: 0.9 }); slashFx(f.x, f.y - 24); hurtFoe(f, cd, false); popNum({ x: f.x, y: f.y - 28, ht: f.ht }, L('反擊', 'Counter'), '#ffe080');
+  }
   if (mv.eatGauge) { p.gauge = 0; popNum({ x: p.x, y: p.y - 14, ht: 56 }, L('時間被吃掉了', 'Time eaten'), '#c080ff'); }
 }
 
@@ -528,9 +664,14 @@ function finish(result) {
 }
 async function victory() {
   await wait(20);
-  const exp = B.foes.reduce((a, f) => a + f.m.exp, 0), gold = B.foes.reduce((a, f) => a + f.m.gold, 0), tp = B.foes.reduce((a, f) => a + f.m.tp, 0);
+  const live = party();
+  const expK = live.some((m) => hasFx(m, 'exp15')) ? 1.5 : 1, goldK = live.some((m) => hasFx(m, 'gold2')) ? 2 : 1;
+  const exp = Math.round(B.foes.reduce((a, f) => a + f.m.exp, 0) * expK), gold = Math.round(B.foes.reduce((a, f) => a + f.m.gold, 0) * goldK), tp = B.foes.reduce((a, f) => a + f.m.tp, 0);
   const drops = [];
-  for (const f of B.foes) if (f.m.drop && Math.random() < f.m.drop[1]) { addItem(f.m.drop[0]); drops.push(ITEMS[f.m.drop[0]].name); }
+  for (const f of B.foes) {
+    S.dex[f.mid] = (S.dex[f.mid] || 0) + 1;
+    for (const [id, ch] of [...(f.m.drop ? [f.m.drop] : []), ...(f.m.drops || [])]) if (Math.random() < ch) { addItem(id); drops.push(ITEMS[id].name); }
+  }
   S.gold += gold;
   const lines = [];
   for (const m of S.members) {
@@ -589,7 +730,8 @@ export function battleDraw() {
   B.heroes.forEach((p, i) => {
     const x = 14 + i * pw, s = stats(p.h), dead = p.h.hp <= 0;
     text(nameOf(p.h), x, H - 56, dead ? '#a06060' : B.cmdFor === p ? '#ffe070' : '#f8f8f8');
-    if (p.h.status.poison) text(L('毒', 'P'), x + 50, H - 56, '#c080ff');
+    const st = p.h.status, marks = [['poison', '毒', 'P', '#c080ff'], ['slow', '緩', 'S', '#c0a0ff'], ['haste', '速', 'H', '#80e0ff'], ['barrier', '盾', 'B', '#a0c8ff'], ['regen', '生', 'R', '#90ffb0']].filter((k) => st[k[0]]);
+    marks.slice(0, 2).forEach((k, j) => text(L(k[1], k[2]), x + 48 + j * 12, H - 56, k[3]));
     text(`${p.h.hp}`, x + pw - 24, H - 56, dead ? '#ff6060' : p.h.hp < s.maxhp / 4 ? '#ffd060' : '#f8f8f8', { align: 'right' });
     text(`${p.h.mp}`, x + pw - 24, H - 41, '#a8c8ff', { align: 'right' });
     text('HP', x + pw - 70, H - 56, '#8890b0'); text('MP', x + pw - 70, H - 41, '#8890b0');

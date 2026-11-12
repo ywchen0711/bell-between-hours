@@ -4,12 +4,14 @@ import { input, pollInput, endInput, setupTouch } from './input.js';
 import { initAudio, playMusic, sfx, setMusic, music } from './audio.js';
 import { L, LANG, setLang } from './i18n.js';
 import { UI, uiTick, say, ask, notice, menu, wait as uiWait } from './ui.js';
-import { S, reset, load, saveInfo, addItem, addMember, fullHeal, party } from './party.js';
+import { S, reset, load, save, saveInfo, addItem, addMember, fullHeal, party, carryOver, markEnding, endingsSeen } from './party.js';
 import { ITEMS, SHOPS } from './data.js';
 import { MAPS, ERA_NAME, mapName } from './maps.js';
 import { F, enterMap, fieldUpdate, fieldDraw, foeContact, facing, underfoot, refreshParty, tryMove, mapLabel, visible, spawnFoes } from './field.js';
 import { startBattle, battleUpdate, battleDraw, inBattle } from './battle.js';
 import { SCRIPTS } from './story.js';
+import './maps2.js';
+import './story2.js';
 import { fieldMenu, shopMenu } from './menu.js';
 import { MONSTERS } from './data.js';
 import { T } from './gfx.js';
@@ -53,6 +55,8 @@ const ctxS = {
   push: (dx, dy) => { const p = F.party[0]; for (let i = 0; i < 10; i++) tryMove(p, dx / 10, dy / 10); },
   warp: (id, tx, ty, dir, dark) => warp(id, tx, ty, dir, dark),
   era: () => F.map.era,
+  map: () => F.map,
+  heal: () => fullHeal(),
   frozen: () => SCRIPTS.frozenPerson(ctxS),
   shop: (id) => shopMenu(SHOPS[id]),
   inn: async (price) => {
@@ -72,7 +76,7 @@ const ctxS = {
     F.map.foes = F.map.foes.filter((g) => g !== group);
     return r;
   },
-  ending: () => ending(),
+  ending: (kind) => ending(kind),
 };
 async function runScript(name, ...args) {
   const f = SCRIPTS[name];
@@ -108,12 +112,12 @@ async function titleScreen() {
   F.camTarget = { x: 20.5 * T, y: 9 * T };
   playMusic('title');
   for (;;) {
-    const has = !!saveInfo();
-    const opts = [L('新的故事', 'New story'), { label: L('繼續', 'Continue'), disabled: !has }, 'Language / 語言'];
-    const k = await menu(opts.map((o) => (typeof o === 'string' ? { label: o } : o)), { x: W / 2 - 70, y: 200, w: 140, cancel: false, start: has ? 1 : 0 });
+    const has = !!saveInfo(), carry = loadCarry();
+    const opts = [L('新的故事', 'New story'), { label: L('繼續', 'Continue'), disabled: !has }, 'Language / 語言', ...(carry ? [{ label: L('二周目（繼承等級與道具）', 'New Game+ (keep levels and items)'), color: '#ffd870' }] : [])];
+    const k = await menu(opts.map((o) => (typeof o === 'string' ? { label: o } : o)), { x: W / 2 - (carry ? 120 : 70), y: carry ? 186 : 200, w: carry ? 240 : 140, cancel: false, start: has ? 1 : 0 });
     initAudio();
     if (k === 2) { setLang(LANG === 'en' ? 'zh' : 'en'); continue; }
-    if (k === 0) { await fadeTo(1); reset(); F.camTarget = null; mode = 'game'; F.beatenHere = new Set(); enterMap('workshop', 6.5, 6.2, 'u'); playMusic('home'); await runScript('intro'); if (fadeA > 0) await fadeTo(0); return; }
+    if (k === 0 || k === 3) { await fadeTo(1); reset(k === 3 ? carry : null); F.camTarget = null; mode = 'game'; F.beatenHere = new Set(); enterMap('workshop', 6.5, 6.2, 'u'); playMusic('home'); await runScript('intro'); if (fadeA > 0) await fadeTo(0); return; }
     if (k === 1 && load()) { await fadeTo(1); F.camTarget = null; mode = 'game'; F.beatenHere = new Set(); enterMap(S.map, S.x / T, S.y / T, S.dir); playMusic(mapMusic()); label = mapLabel(mapName(MAPS[S.map])); await fadeTo(0); return; }
   }
 }
@@ -128,22 +132,55 @@ async function gameOver() {
 }
 let overOK = null;
 
-// ---------- the ending ----------
-async function ending() {
+// ---------- the endings ----------
+const CARRY = 'bellhours-carry';
+function loadCarry() { try { return JSON.parse(localStorage.getItem(CARRY)); } catch (e) { return null; } }
+const CREDITS = () => [
+  [L('素材（一）', 'Art and music (1)'), 'LPC Tile Atlas 1 & 2 — Lanea Zimmerman (Sharm), Daniel Armstrong, Casper Nilsson,', 'Daniel Eddeland, Jonas Klinger and others (CC-BY-SA 3.0 / GPL 3.0)', 'Universal LPC Spritesheet Generator contributors (CC-BY-SA / GPL / OGA-BY)', 'LPC monsters — Charles Gabriel (CC-BY-SA 3.0 / GPL 3.0)', 'Font — Cubic 11 (OFL)'],
+  [L('素材（二）', 'Art and music (2)'), 'LPC Golem, Wolf, Spiders, Imps, Beetle, 1-Hour Enemy — Stephen "Redshrike" Challener,', 'commissioned by William.Thompsonj (CC-BY / OGA-BY / GPL)', 'LPC animals 2022 — tapatilorenzo, Sevarihk (CC-BY 4.0)', 'Centipede — FiveBrosStopMosYT (CC-BY-SA)  ·  Arachne — AntumDeluge (CC-BY 3.0)', 'Bull — Evert, Daniel Eddeland, Nila122 (CC-BY-SA)  ·  Ectoplasm — Reemax (CC0)', 'Bat demon — theidiotmachine (CC0)'],
+  [L('音樂', 'Music'), 'Juhani Junkala — JRPG Packs #1–#5 (CC0), GT RPG soundtrack (CC-BY 4.0)', 'OwlishMedia, Haeldb, Hydrogene (CC0)', '', L('詳細名單見 CREDITS.md', 'Full list in CREDITS.md')],
+];
+async function ending(kind = 'normal') {
   await fadeTo(1, 40);
-  playMusic('ending');
-  const pages = [
-    [L('寂靜消失了。', 'The Hush was gone.'), L('沒有聲音的鐘，再也沒有響過。', 'The soundless bell never tolled again.')],
-    [L('公元 2400 年', 'AD 2400'), L('靜止之年起風了。石像一個接一個地眨眼、伸懶腰。', 'Wind came to Stillfall. One by one the statues blinked and stretched.'), L('賽勒斯留下來，和伊歐妮一起把城鎮重建起來。', 'Silas stayed, and with Ione began to rebuild the town.')],
-    [L('公元前 3000 年', '3000 BC'), L('卡雅回到了根野。每天早上，骨笛的聲音照常叫醒太陽。', 'Kaya went home to the Rootwild. Every morning the bone flute woke the sun as always.'), L('族長托朗把火山口重新封起來，再也不挖了。', 'Chief Toran sealed the crater and never dug again.')],
-    [L('公元 1250 年', 'AD 1250'), L('千鐘祭重新開始。這一次，鐘聲往外傳，傳得很遠很遠。', 'The Thousand Bells Festival began again. This time the bell rang outwards, far and far away.'), L('米拉繼續她的旅行。薇絲珀守在鐘塔裡，學著說再見。', 'Mira went on with her travels. Vesper kept watch in the tower, learning to say goodbye.')],
-    [L('蓮成了燈河鎮最年輕的鐘匠。', 'Ren became the youngest clockmaker in Lanternford.'), L('他做的每一口鐘，都有三種聲音：', 'Every bell he made had three voices:'), L('開始的聲音、現在的聲音、結束的聲音。', 'the sound of beginning, the sound of now, and the sound of ending.')],
-    [L('時隙鐘聲　完', 'The Bell Between Hours — The End'), '', L('原創作品・感謝遊玩', 'An original game · thank you for playing')],
-    [L('素材', 'Art and music'), 'LPC Tile Atlas 1 & 2 — Lanea Zimmerman (Sharm), Daniel Armstrong, Casper Nilsson,', 'Daniel Eddeland, Jonas Klinger and others (CC-BY-SA 3.0 / GPL 3.0)', 'Universal LPC Spritesheet Generator contributors (CC-BY-SA / GPL / OGA-BY)', 'LPC monsters — Charles Gabriel (CC-BY-SA 3.0 / GPL 3.0)', 'Music — Juhani Junkala, OwlishMedia, Haeldb (CC0)', 'Font — Cubic 11 (OFL)', L('詳細名單見 CREDITS.md', 'Full list in CREDITS.md')],
-  ];
+  const vesper = !!S.members.find((m) => m.id === 'vesper');
+  let pages;
+  if (kind === 'bad') {
+    playMusic('sad');
+    pages = [
+      [L('結局・永恆的正午', 'Ending · Eternal Noon')],
+      [L('蓮點了點頭。', 'Ren nodded.'), L('鐘聲停在正午，再也沒有落下。', 'The bell stopped at noon, and the noon never ended.')],
+      [L('師傅永遠不會老，朋友永遠不會離開。', 'Master never grew old. Friends never left.'), L('……也永遠不會再有明天。', '...And there was never another tomorrow.')],
+      [L('在時隙之間最深的地方，一口沒有響過的鐘，靜靜地掛著。', 'In the deepest place of the Hour Between, a bell that never rang hung silently.'), '', L('（其他的結局還在等你）', '(Other endings are waiting for you)')],
+    ];
+  } else {
+    playMusic(kind === 'good' ? 'hymn' : 'ending');
+    pages = [
+      [kind === 'good' ? L('結局・鐘聲遠揚', 'Ending · The Bell Rings Far') : L('結局・寂靜的餘韻', 'Ending · Echo of the Hush')],
+      [L('寂靜的心變成了一顆種子。', "The Hush's heart became a seed."), L('從此，時間又開始流動。', 'And time began to flow again.')],
+      [L('公元前 30000 年', '30000 BC'), L('尼洛長成了最好的獵人。', 'Nilo grew into the finest hunter.'), S.flags.calf_saved ? L('他的猛獁「圓圓」一直活到很老很老。', 'His mammoth Roundy lived to a great, great age.') : L('尤卡的骨笛，一代一代傳了下去。', "Yuka's bone flute was handed down, generation after generation.")],
+      [L('公元前 3000 年', '3000 BC'), L('卡雅回到了根野。每天早上，骨笛的聲音照常叫醒太陽。', 'Kaya went home to the Rootwild. Every morning the bone flute woke the sun as always.'), S.flags.acorn_planted ? L('時隙旁的小橡樹，長得一年比一年高。', 'The little oak by the rift grew taller every year.') : L('族長托朗把火山口重新封起來，再也不挖了。', 'Chief Toran sealed the crater and never dug again.')],
+      [L('公元 1250 年', 'AD 1250'), L('千鐘祭重新開始。這一次，鐘聲往外傳，傳得很遠很遠。', 'The Thousand Bells Festival began again. This time the bell rang outwards, far and far away.'), S.flags.greyfang_debt ? L('灰牙當上了商隊的護衛，再也沒有偷過東西。', 'Greyfang became a caravan guard and never stole again.') : ''],
+      [L('公元 1820 年', 'AD 1820'), L('黃銅港的鐘，每一個都走在自己的秒數上。', 'Every clock in Brasshaven kept its own seconds.'), L('卡爾德教授開始在哈蒂的店裡學修錶。米拉偶爾會回去上課。', "Professor Calder began learning watch repair in Hattie's shop. Mira went back to class now and then.")],
+      [L('公元 2400 年', 'AD 2400'), L('靜止之年起風了。石像一個接一個地眨眼、伸懶腰。', 'Wind came to Stillfall. One by one the statues blinked and stretched.'), S.flags.valve_open ? L('乾掉的河道裡流著水，賽勒斯和伊歐妮在河邊種下了第一片田。', 'Water ran in the old riverbed, and Silas and Ione planted the first field beside it.') : L('賽勒斯留下來，和伊歐妮一起把城鎮重建起來。', 'Silas stayed, and with Ione began to rebuild the town.')],
+      kind === 'good'
+        ? [L('公元 9000 年', 'AD 9000'), L('薇絲珀回到餘燼之城，把那顆種子種在露明的墓旁。', "Vesper went home to Emberfall and planted the seed by Lumen's grave."), L('隔年春天，紅色的太陽下開滿了花。大家摘下了面具。', 'The next spring, flowers covered the ground under the red sun. Everyone took off their masks.')]
+        : [L('公元 9000 年', 'AD 9000'), vesper ? L('薇絲珀回到了餘燼之城，學著和大家一起看最後的日落。', 'Vesper went home to Emberfall, learning to watch the last sunsets with everyone.') : L('薇絲珀守在燈河鎮的鐘塔裡，仍然學著說再見。', 'Vesper kept watch in the Lanternford tower, still learning to say goodbye.'), L('餘燼之城的人，還戴著面具。', 'In Emberfall, people still wore their masks.')],
+      [L('蓮成了燈河鎮最年輕的鐘匠。', 'Ren became the youngest clockmaker in Lanternford.'), L('他做的每一口鐘，都有三種聲音：', 'Every bell he made had three voices:'), L('開始的聲音、現在的聲音、結束的聲音。', 'the sound of beginning, the sound of now, and the sound of ending.')],
+      [L('時隙鐘聲　完', 'The Bell Between Hours — The End'), '', L('原創作品・感謝遊玩', 'An original game · thank you for playing'), kind === 'good' ? '' : L('（改變更多過去的命運，結局也許會不一樣）', '(Change more of the past, and the ending may change too)')],
+      ...CREDITS(),
+      [L('通關存檔已記錄在「繼續」。', 'Your cleared game is saved under Continue.'), L('時隙之間的南邊，有一扇新的門打開了。', 'A new door has opened south of the Hour Between.'), L('標題畫面可以開始「二周目」。', 'New Game+ is now on the title screen.')],
+    ];
+  }
   mode = 'credits';
   for (const p of pages) { await new Promise((res) => { caption = { lines: p, t: 0, res, long: true }; }); }
-  S.flags.cleared = true;
+  markEnding(kind);
+  if (kind !== 'bad') {
+    // the cleared game waits at the Hour Between, with the door to the Unrung Bell open
+    S.flags.cleared = true; S.flags['end_' + kind] = true;
+    fullHeal(); S.map = 'interval'; S.x = 16.5 * T; S.y = 14.6 * T; S.dir = 'd';
+    save();
+  }
+  try { localStorage.setItem(CARRY, JSON.stringify(carryOver())); } catch (e) { /* private mode */ }
   await fadeTo(1, 30);
   titleScreen();
 }
@@ -209,7 +246,9 @@ function drawTitle() {
   const x = Math.round(W / 2 - g.width * k / 2), y = 60 + Math.round(Math.sin(titleT / 50) * 2);
   ctx.drawImage(gs, x + k, y + k, g.width * k, g.height * k); ctx.drawImage(g, x, y, g.width * k, g.height * k);
   text(LANG === 'en' ? '時隙鐘聲' : 'The Bell Between Hours', W / 2, y + g.height * k + 10, '#c8d0f0', { align: 'center' });
-  text(L('一個關於三個時代、一口鐘的原創故事', 'An original tale of three eras and one bell'), W / 2, y + g.height * k + 30, '#9098c0', { align: 'center' });
+  text(L('一個關於七個時代、一口鐘的原創故事', 'An original tale of seven ages and one bell'), W / 2, y + g.height * k + 30, '#9098c0', { align: 'center' });
+  const seen = endingsSeen(), ne = ['normal', 'good', 'bad'].filter((e) => seen[e]).length;
+  if (ne) text(L(`看過的結局 ${ne}／3`, `Endings seen ${ne}/3`), W - 10, H - 16, '#c0a060', { align: 'right' });
 }
 function frame() {
   pollInput(); uiTick();
@@ -240,6 +279,6 @@ function frame() {
 setupTouch();
 addEventListener('keydown', () => initAudio(), { once: false });
 addEventListener('pointerdown', () => initAudio());
-window.G = { setMode: (m) => { mode = m; UI.clear(); fadeA = 0; }, uiActive: () => UI.active || !!caption || fadeA > 0.05, fullHeal, S, F, warp, runScript, fight, MAPS, startBattle, get mode() { return mode; }, get busy() { return busy; }, MONSTERS, addMember, refreshParty, enterMap };
+window.G = { addItem, save, endingsSeen, setMode: (m) => { mode = m; UI.clear(); fadeA = 0; }, uiActive: () => UI.active || !!caption || fadeA > 0.05, fullHeal, S, F, warp, runScript, fight, MAPS, startBattle, get mode() { return mode; }, get busy() { return busy; }, MONSTERS, addMember, refreshParty, enterMap };
 titleScreen();
 requestAnimationFrame(frame);

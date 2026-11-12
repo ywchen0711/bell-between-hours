@@ -60,7 +60,7 @@ def('workshop', () => {
     name: ['奧林鐘錶工坊', "Orrin's Clockworks"], era: 'present', music: 'home', base: 'floor:plank', order: ['floor:plank', 'wall:brick'], rows: rows(g), inside: true,
     props: [['books', 1, 2], ['shelf', 3, 2], ['table', 5, 4], ['barrel', 11, 2], ['barrel', 12, 2], ['bed', 11, 8], ['stove', 1, 8], ['vase', 9, 2], ['plant', 12, 4]],
     deco: [{ kind: 'clock', x: 8, y: 1 }, { kind: 'clock', x: 10, y: 1, small: true }],
-    npcs: [{ id: 'orrin', sprite: 'orrin', x: 7, y: 5, dir: 'd', talk: 'orrin', unless: 'present_frozen_done' }],
+    npcs: [{ id: 'orrin', sprite: 'orrin', x: 7, y: 5, dir: 'd', talk: 'orrin' }],
     warps: [{ x: 6, y: 10, w: 2, h: 1, to: 'lantern', tx: 7.5, ty: 10.6, dir: 'd' }],
     events: [{ x: 1, y: 2, w: 4, h: 2, run: 'readShelf', touch: false }],
   };
@@ -80,7 +80,7 @@ def('lantern', () => {
     name: ['燈河鎮', 'Lanternford'], era: 'present', music: 'town', base: 'grass', order: ['dirt', 'water', 'floor:stone'], rows: rows(g),
     houses: [{ x: 3, y: 4, w: 6, to: 'workshop', tx: 6.5, ty: 9.2 }, { x: 30, y: 4, w: 6 }, { x: 4, y: 19, w: 5 }, { x: 29, y: 20, w: 6 }, { x: 17, y: 3, w: 7, style: 'stone', to: 'tower', tx: 7.5, ty: 10.2, tower: true }],
     props,
-    deco: [{ kind: 'spire', x: 20.5, y: 5 }, { kind: 'clock', x: 20.5, y: 5.5, big: true }, { kind: 'rift', x: 20, y: 18, if: 'rift_lantern', unless: 'freeTravelNo' }, { kind: 'festival', x: 12, y: 11, w: 16, unless: 'bell_rung' }],
+    deco: [{ kind: 'spire', x: 20.5, y: 5 }, { kind: 'clock', x: 20.5, y: 5.5, big: true }, { kind: 'rift', x: 20, y: 18, if: 'rift_lantern', unless: 'freeTravelNo' }, { kind: 'festival', x: 12, y: 11, w: 16, unless: 'bell_rung' }, { kind: 'oak', x: 35, y: 25.5, small: true, if: 'acorn_planted' }],
     npcs: [
       { id: 'mira', sprite: 'mira', x: 18, y: 14, dir: 'u', talk: 'miraPlaza', if: 'met_orrin', unless: 'has_mira' },
       { id: 'queen', sprite: 'queen', x: 20, y: 12, dir: 'd', talk: 'queen', if: 'fork_back', unless: 'bell_rung' },
@@ -123,8 +123,9 @@ def('woods', () => {
       { id: 'w_a', x: 9, y: 13, list: ['slime', 'slime'] }, { id: 'w_b', x: 16, y: 9, list: ['bee', 'bandit'] }, { id: 'w_c', x: 24, y: 16, list: ['snake', 'slime', 'bee'] },
       { id: 'w_d', x: 31, y: 18, list: ['bandit', 'bandit'] }, { id: 'w_e', x: 9, y: 22, list: ['goblin'] }, { id: 'w_f', x: 36, y: 13, list: ['goblin', 'snake'] },
       { id: 'w_boss', x: 40, y: 8, list: ['greyfang', 'bandit', 'bandit'], boss: true, unless: 'beat_greyfang', run: 'greyfangIntro' },
+      { id: 'w_g', x: 26, y: 22, list: ['woodspider', 'woodspider'] }, { id: 'w_h', x: 14, y: 5, list: ['woodspider', 'bee', 'slime'] },
     ],
-    npcs: [{ id: 'hurtguard', sprite: 'guard', x: 4, y: 12, dir: 'r', talk: 'woodsGuard', unless: 'bell_rung' }],
+    npcs: [{ id: 'hurtguard', sprite: 'guard', x: 4, y: 12, dir: 'r', talk: 'woodsGuard', unless: 'bell_rung' }, { id: 'greyfang', sprite: 'wolfman', x: 42, y: 9, dir: 'l', talk: 'greyfangCamp', if: 'beat_greyfang' }],
   };
 });
 
@@ -135,6 +136,7 @@ def('tower', () => {
     name: ['鐘塔頂', 'The Bell Loft'], era: 'present', music: 'clock', base: 'floor:stone', order: ['floor:stone', 'wall:stone'], rows: rows(g), inside: true,
     props: [['pillar', 2, 4], ['pillar', 12, 4], ['pillar', 2, 9], ['pillar', 12, 9], ['torch', 4, 2], ['torch', 10, 2]],
     deco: [{ kind: 'bell', x: 7.5, y: 5.2 }],
+    npcs: [{ id: 'vesperT', sprite: 'vesperh', x: 11, y: 8, dir: 'l', talk: 'vesperTower2', if: 'beat_vesper', unless: 'has_vesper' }],
     warps: [{ x: 7, y: 12, w: 1, h: 1, to: 'lantern', tx: 20.5, ty: 9.6, dir: 'd' }],
     events: [{ x: 6, y: 6, w: 3, h: 2, run: 'bellTouch', touch: false }, { x: 5, y: 7, w: 5, h: 3, run: 'vesperTower', touch: true, if: 'clapper_made', unless: 'beat_vesper' }],
   };
@@ -155,12 +157,14 @@ def('stillfall', () => {
     name: ['靜止之年・燈河鎮遺址', 'Stillfall, the ruins of Lanternford'], era: 'future', music: 'ruins', base: 'darkdirt', order: ['moss', 'grass', 'dirt', 'hole', 'floor:flag'], rows: rows(g), tint: 'still',
     houses: [{ x: 30, y: 4, w: 6, style: 'stone', to: 'archive', tx: 9, ty: 11.2, dark: true }, { x: 17, y: 3, w: 7, style: 'stone', tower: true, dark: true, shut: true }],
     props,
-    deco: [{ kind: 'spire', x: 20.5, y: 5, dark: true }, { kind: 'clock', x: 20.5, y: 5.5, big: true, stopped: true }, { kind: 'rift', x: 20, y: 17, if: 'arrived_future' }, { kind: 'rift', x: 20, y: 25, if: 'spire_open', red: true }],
+    deco: [{ kind: 'spire', x: 20.5, y: 5, dark: true }, { kind: 'clock', x: 20.5, y: 5.5, big: true, stopped: true }, { kind: 'rift', x: 20, y: 17, if: 'arrived_future' }, { kind: 'rift', x: 20, y: 25, if: 'spire_open', red: true }, { kind: 'oak', x: 8, y: 25, if: 'acorn_planted' }, { kind: 'spring', x: 30, y: 22, if: 'valve_open' }],
     statues: [['townman', 9, 16, 'r'], ['townwoman', 26, 18, 'l'], ['child', 24, 16, 'l'], ['merchant', 14, 15, 'd'], ['guard', 19, 10, 'd'], ['queen', 21, 13, 'd'], ['innkeep', 33, 11, 'd']],
     npcs: [
       { id: 'silas', sprite: 'silas', x: 22, y: 16, dir: 'l', talk: 'silasMeet', unless: 'has_silas' },
       { id: 'survivor', sprite: 'survivor', x: 10, y: 19, dir: 'r', talk: 'survivor' },
       { id: 'vend', sprite: null, x: 14, y: 12, talk: 'shopStillfall' },
+      { id: 'dryad', sprite: 'townwoman', look: 'hue:100', x: 10, y: 25, dir: 'd', talk: 'dryad', if: 'acorn_planted' },
+      { id: 'springman', sprite: 'survivor', x: 28, y: 21, dir: 'r', talk: 'springSurvivor', if: 'valve_open' },
     ],
     warps: [],
     saves: [[16, 17]],
@@ -169,6 +173,7 @@ def('stillfall', () => {
       { id: 'sf1', x: 8, y: 13, list: ['skeleton', 'zombie'] }, { id: 'sf2', x: 27, y: 15, list: ['ghost', 'bat'], if: 'has_silas' }, { id: 'sf3', x: 30, y: 23, list: ['zombie', 'zombie', 'bat'] },
       { id: 'sf4', x: 12, y: 24, list: ['hollow', 'skeleton'] }, { id: 'sf5', x: 33, y: 13, list: ['hollow', 'ghost'], if: 'has_silas' }, { id: 'sf6', x: 14, y: 7, list: ['bat', 'bat', 'skeleton'] },
       { id: 'sf_meet', x: 25, y: 16, list: ['ghost', 'ghost'], unless: 'has_silas', run: 'silasFight', scripted: true },
+      { id: 'sf7', x: 36, y: 18, list: ['ruinrat', 'ruinrat'], if: 'has_silas' },
     ],
     events: [{ x: 19, y: 16, w: 2, h: 2, run: 'riftGate', if: 'arrived_future' }, { x: 19, y: 24, w: 2, h: 2, run: 'spireGate', if: 'spire_open' }, { x: 0, y: 0, w: 40, h: 30, run: 'arriveFuture', touch: true, unless: 'arrived_future_talk' }],
   };
@@ -221,15 +226,17 @@ def('rootwild', () => {
   return {
     name: ['根野', 'The Rootwild'], era: 'ancient', music: 'jungle', base: 'grass', order: ['darkdirt', 'water'], rows: rows(g),
     props,
-    deco: [{ kind: 'rift', x: 3, y: 15 }],
+    deco: [{ kind: 'rift', x: 3, y: 15 }, { kind: 'oak', x: 7, y: 21, small: true, if: 'acorn_planted' }],
+    npcs: [{ id: 'mammoth', mon: 'bull', look: 'hue:30', scale: 1.2, x: 26, y: 17, dir: 'l', talk: 'mammothHerd', if: 'calf_saved' }],
     warps: [{ x: 45, y: 12, w: 1, h: 5, to: 'village', tx: 1.5, ty: 11.5, dir: 'r' }],
     saves: [[6, 17]],
-    chests: [{ id: 'r1', x: 4, y: 26, item: 'hitonic', n: 2 }, { id: 'r2', x: 40, y: 3, item: 'feather' }, { id: 'r3', x: 30, y: 27, item: 'amulet' }],
+    chests: [{ id: 'r1', x: 10, y: 25, item: 'hitonic', n: 2 }, { id: 'r2', x: 40, y: 3, item: 'feather' }, { id: 'r3', x: 30, y: 27, item: 'amulet' }],
     foes: [
       { id: 'r_a', x: 12, y: 15, list: ['boarman'] }, { id: 'r_b', x: 22, y: 14, list: ['lizard', 'smallworm'] }, { id: 'r_c', x: 28, y: 19, list: ['flower'] },
       { id: 'r_d', x: 34, y: 15, list: ['boarman', 'lizard'] }, { id: 'r_e', x: 14, y: 24, list: ['bigworm', 'smallworm'] }, { id: 'r_f', x: 40, y: 22, list: ['flower', 'lizard'] },
+      { id: 'r_g', x: 36, y: 7, list: ['mushman', 'mushman'] }, { id: 'r_h', x: 8, y: 8, list: ['poisonbeetle', 'plainlion'] }, { id: 'r_i', x: 22, y: 26, list: ['plainlion', 'mushman'] },
     ],
-    events: [{ x: 2, y: 14, w: 2, h: 2, run: 'riftGate' }, { x: 0, y: 0, w: 46, h: 30, run: 'arriveAncient', touch: true, unless: 'arrived_ancient' }],
+    events: [{ x: 2, y: 14, w: 2, h: 2, run: 'riftGate' }, { x: 0, y: 0, w: 46, h: 30, run: 'arriveAncient', touch: true, unless: 'arrived_ancient' }, { x: 6, y: 19, w: 3, h: 2, run: 'plantAcorn', touch: false, unless: 'acorn_planted' }],
   };
 });
 
@@ -250,6 +257,7 @@ def('village', () => {
       { id: 'tribem', sprite: 'tribem', x: 9, y: 13, dir: 'r', talk: 'tribem', wander: 2 },
       { id: 'tribef', sprite: 'tribef', x: 24, y: 12, dir: 'l', talk: 'shopVillage' },
       { id: 'tribem2', sprite: 'tribem', x: 16, y: 3, dir: 'd', talk: 'craterGuard', unless: 'has_kaya' },
+      { id: 'rider', sprite: 'tribef', x: 26, y: 18, dir: 'l', talk: 'mammothRider', if: 'calf_saved' },
     ],
     warps: [{ x: 0, y: 9, w: 1, h: 5, to: 'rootwild', tx: 44.3, ty: 14.5, dir: 'l' }, { x: 14, y: 0, w: 5, h: 1, to: 'crater', tx: 16.5, ty: 26.4, dir: 'u', if: 'has_kaya' }],
     saves: [[12, 16]],
@@ -283,3 +291,5 @@ def('crater', () => {
 
 export const ERA_NAME = { present: ['公元 1250 年・燈河鎮', 'AD 1250 · Lanternford'], future: ['公元 2400 年・靜止之年', 'AD 2400 · Stillfall'], ancient: ['公元前 3000 年・根野', '3000 BC · the Rootwild'] };
 export const mapName = (m) => L(m.name[0], m.name[1]);
+// the helpers, for the maps of the expansion in maps2.js
+export { grid, rect, path, blob, border, scatter, rows, def };

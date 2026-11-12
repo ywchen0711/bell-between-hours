@@ -4,6 +4,7 @@ import { L } from './i18n.js';
 
 export const S = {
   members: [], active: [], inv: {}, gold: 0, flags: {}, map: 'workshop', x: 0, y: 0, dir: 'd', time: 0, beaten: {}, opened: {},
+  dex: {}, seen: {}, tokens: 0, fish: {}, carry: null,
 };
 export function makeHero(id, lv = 1) {
   const h = { id, lv, exp: expFor(lv), tp: 0, equip: { ...HEROES[id].equip }, status: {} };
@@ -25,7 +26,11 @@ export function stats(h) {
   return s;
 }
 export const nameOf = (h) => HEROES[h.id].name;
-export const techsOf = (h) => LEARN[h.id].filter((t) => h.tp >= TECHS[t].tp);
+// a technique is known once enough TP is earned, or (for side-story techniques) once its story flag is set
+export const techsOf = (h) => LEARN[h.id].filter((t) => (TECHS[t].flag ? !!S.flags[TECHS[t].flag] : h.tp >= TECHS[t].tp));
+// what an accessory does besides its numbers
+export const fxOf = (h) => { const it = ITEMS[h.equip.acc]; return new Set((it && it.fx) || []); };
+export const hasFx = (h, k) => fxOf(h).has(k);
 export const knows = (h, t) => !!h && techsOf(h).includes(t);
 export const member = (id) => S.members.find((m) => m.id === id);
 export const party = () => S.active.map(member).filter(Boolean);
@@ -37,6 +42,9 @@ export function addMember(id, lv) {
   const h = makeHero(id, lv || avg);
   // a newcomer has picked up as much technique as the others
   h.tp = S.members.length ? Math.round(S.members.reduce((a, m) => a + m.tp, 0) / S.members.length) : 0;
+  // New Game+: a friend comes back as strong as they were
+  const c = S.carry && S.carry.members && S.carry.members[id];
+  if (c) { Object.assign(h, { lv: Math.max(h.lv, c.lv), exp: Math.max(h.exp, c.exp), tp: Math.max(h.tp, c.tp) }); if (c.equip) h.equip = { ...c.equip }; const st = stats(h); h.hp = st.maxhp; h.mp = st.maxmp; }
   S.members.push(h);
   if (S.active.length < 3) S.active.push(id);
   S.flags['has_' + id] = true;
@@ -67,10 +75,27 @@ export function saveInfo(slot = 0) { try { return JSON.parse(localStorage.getIte
 export function load(slot = 0) {
   const d = saveInfo(slot);
   if (!d) return false;
-  Object.assign(S, { members: [], active: [], inv: {}, flags: {}, beaten: {}, opened: {} }, d);
+  Object.assign(S, { members: [], active: [], inv: {}, flags: {}, beaten: {}, opened: {}, dex: {}, seen: {}, tokens: 0, fish: {}, carry: null }, d);
   return true;
 }
-export function reset() {
-  Object.assign(S, { members: [], active: [], inv: { tonic: 3 }, gold: 60, flags: {}, map: 'workshop', x: 5 * 32 + 16, y: 5 * 32 + 16, dir: 'd', time: 0, beaten: {}, opened: {} });
+export function reset(carry = null) {
+  Object.assign(S, { members: [], active: [], inv: { tonic: 3 }, gold: 60, flags: {}, map: 'workshop', x: 5 * 32 + 16, y: 5 * 32 + 16, dir: 'd', time: 0, beaten: {}, opened: {}, dex: {}, seen: {}, tokens: 0, fish: {}, carry });
+  if (carry) {
+    // New Game+: keep the gold, the bag (but not the story's keys) and the monster book
+    S.gold = carry.gold; S.inv = { ...carry.inv }; S.dex = { ...(carry.dex || {}) }; S.seen = { ...(carry.seen || {}) }; S.flags.ngplus = (carry.round || 1);
+    for (const k of Object.keys(S.inv)) if (!ITEMS[k] || ITEMS[k].type === 'key') delete S.inv[k];
+  }
   addMember('ren', 1);
 }
+// what New Game+ carries over from a finished game
+export function carryOver() {
+  const members = {};
+  for (const m of S.members) members[m.id] = { lv: m.lv, exp: m.exp, tp: m.tp, equip: { ...m.equip } };
+  const inv = { ...S.inv };
+  for (const m of S.members) for (const sl of ['weapon', 'armor', 'acc']) if (m.equip[sl] && m.id !== 'ren') { /* worn things travel with their owner */ }
+  return { members, inv, gold: S.gold, dex: S.dex, seen: S.seen, round: (S.flags.ngplus || 0) + 1 };
+}
+// the endings seen on this device, kept apart from the saves
+const EKEY = 'bellhours-endings';
+export function endingsSeen() { try { return JSON.parse(localStorage.getItem(EKEY)) || {}; } catch (e) { return {}; } }
+export function markEnding(id) { const e = endingsSeen(); e[id] = (e[id] || 0) + 1; try { localStorage.setItem(EKEY, JSON.stringify(e)); } catch (x) { /* private mode */ } }

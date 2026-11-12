@@ -1,6 +1,6 @@
 // People and creatures. Every person is one LPC sheet: rows of 64px frames (bigger frames for long
 // weapons), four directions per animation in the order up, left, down, right.
-import { IMG, CHAR_META } from './assets.js';
+import { IMG, CHAR_META, MON2_META } from './assets.js';
 import { canvas } from './gfx.js';
 
 export const DIRS = { u: 0, l: 1, d: 2, r: 3 };
@@ -31,6 +31,22 @@ function sheet(key, look) {
       p[i] = y + 0.956 * i2 + 0.621 * q2; p[i + 1] = y - 0.272 * i2 - 0.647 * q2; p[i + 2] = y - 1.106 * i2 + 1.703 * q2;
     } else if (kind === 'dark') {
       p[i] = r * 0.45 + 30; p[i + 1] = g * 0.3 + 10; p[i + 2] = b * 0.5 + 50;
+    } else if (kind === 'frost') {
+      const l = r * 0.3 + g * 0.55 + b * 0.15;
+      p[i] = l * 0.75 + 60; p[i + 1] = l * 0.85 + 70; p[i + 2] = l * 0.7 + 105;
+    } else if (kind === 'void') {
+      const l = r * 0.3 + g * 0.55 + b * 0.15;
+      p[i] = l * 0.35 + 24; p[i + 1] = l * 0.2 + 8; p[i + 2] = l * 0.55 + 46;
+      if (l > 170) { p[i] = 230; p[i + 1] = 200; p[i + 2] = 255; }
+    } else if (kind === 'ember') {
+      const l = r * 0.3 + g * 0.55 + b * 0.15;
+      p[i] = l * 0.9 + 40; p[i + 1] = l * 0.45 + 10; p[i + 2] = l * 0.25;
+    } else if (kind === 'brass') {
+      const l = r * 0.3 + g * 0.55 + b * 0.15;
+      p[i] = l * 0.95 + 30; p[i + 1] = l * 0.75 + 16; p[i + 2] = l * 0.35;
+    } else if (kind === 'gold') {
+      const l = r * 0.3 + g * 0.55 + b * 0.15;
+      p[i] = l * 0.8 + 70; p[i + 1] = l * 0.7 + 50; p[i + 2] = l * 0.3 + 10;
     }
   }
   c.x.putImageData(d, 0, 0);
@@ -71,10 +87,22 @@ export const MON = {
   small_worm: { fs: 64, idle: [0, 1, 2], atk: [3, 4, 3], foot: 26 },
   snake: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 6], foot: 26 },
 };
+// the second set of creatures (OpenGameArt LPC sheets, normalised): fw x fh cells, feet `pad` above the bottom
+for (const [n, m] of Object.entries(MON2_META)) MON[n] = { ...m, src: 'm2:' + n, foot: 0, fly: m.fly };
+export const monName = (sprite) => sprite.slice(sprite.indexOf(':') + 1);
+export const isMon = (sprite) => sprite[0] === 'm';
 // the man-eater's first row is the bud asleep; it wakes facing down
 export function drawMon(g, name, { dir = 'd', frame = 0, attacking = false, x, y, look, alpha = 1, scale = 1, t = 0 } = {}) {
-  const m = MON[name], img = sheet('m:' + name, look);
+  const m = MON[name], img = m && sheet(m.src || 'm:' + name, look);
   if (!m || !img) return;
+  if (m.fw) {
+    const seq = attacking ? m.atk : m.idle, f = seq[Math.floor(frame) % seq.length], row = DIRS[dir] ?? 2;
+    const lift = m.fly ? m.fly + Math.sin(t * 4) * 2 : 0, w = m.fw * scale, h = m.fh * scale;
+    g.globalAlpha = alpha;
+    g.drawImage(img, f * m.fw, row * m.fh, m.fw, m.fh, Math.round(x - w / 2), Math.round(y - (m.fh - m.pad) * scale - lift), w, h);
+    g.globalAlpha = 1;
+    return;
+  }
   const seq = attacking ? m.atk : m.idle, f = seq[Math.floor(frame) % seq.length];
   let row = DIRS[dir] ?? 2;
   if (name === 'man_eater_flower') row = row === 0 ? 1 : row;

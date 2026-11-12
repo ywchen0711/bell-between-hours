@@ -1,0 +1,9 @@
+These creature sheets were rearranged from LPC-style art on OpenGameArt.org. Authors and licences:
+golem, wolf, wolf2, spider, spider2, spider3, imp_*: Stephen "Redshrike" Challener, commissioned by William.Thompsonj (CC-BY 3.0/4.0, OGA-BY 3.0, GPL)
+beetle_*, flier: Stephen "Redshrike" Challener (CC-BY-SA 3.0, CC-BY 3.0, OGA-BY 3.0, GPL)
+bear_*, fox, lion, lioness, deer: tapatilorenzo; rat, mushroom: Sevarihk ("lpc animals 2022", CC-BY 4.0)
+centipede: FiveBrosStopMosYT (CC-BY-SA 3.0/4.0)
+arachne: AntumDeluge, after Stephen Challener, William.Thompsonj and Svetlana Kushnariova (CC-BY 3.0, OGA-BY 3.0)
+bull: Evert, from Daniel Eddeland and Nila122 (CC-BY-SA 3.0, GPL 3.0)
+ecto: Reemax (CC0); batdemon: theidiotmachine (CC0)
+Full links in CREDITS.md.

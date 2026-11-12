@@ -3,8 +3,8 @@
 // everything sorted by how far down the screen it stands.
 import { ctx, W, H, T, canvas, text } from './gfx.js';
 import { MAPS, LEGEND, BLOCK } from './maps.js';
-import { renderGround, prop, PROPS, house } from './tiles.js';
-import { drawChar, drawMon, shadow, dirOf, MON } from './sprites.js';
+import { renderGround, prop, PROPS, house, repaint } from './tiles.js';
+import { drawChar, drawMon, shadow, dirOf, MON, monName } from './sprites.js';
 import { MONSTERS, HEROES } from './data.js';
 import { S, party } from './party.js';
 import { input } from './input.js';
@@ -21,7 +21,7 @@ export function enterMap(id, tx, ty, dir) {
   F.map = m; S.map = id;
   const w = m.rows[0].length, h = m.rows.length;
   F.w = w; F.h = h;
-  if (!groundCache.has(id)) groundCache.set(id, renderGround(m.rows, LEGEND, m.order, m.base));
+  if (!groundCache.has(id)) groundCache.set(id, repaint(renderGround(m.rows, LEGEND, m.order, m.base), m.palette));
   F.ground = groundCache.get(id);
   // collision in 8px cells
   const cw = w * 4, ch = h * 4, col = new Uint8Array(cw * ch);
@@ -31,7 +31,7 @@ export function enterMap(id, tx, ty, dir) {
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (BLOCK.has(m.rows[y][x])) block(x * T, y * T, x * T + T, y * T + T);
   F.ents = []; F.npcs = []; F.foes = []; F.fx = [];
   for (const [name, x, y] of m.props || []) {
-    const p = PROPS[name], img = prop(name), left = x * T, bottom = (y + 1) * T;
+    const p = PROPS[name], img = repaint(prop(name), m.palette, 'p:' + name), left = x * T, bottom = (y + 1) * T;
     const e = { kind: 'prop', img, x: left, y: bottom, sort: bottom - (p[5] ? p[5][1] : 0) - (p[5] ? 4 : 30) };
     if (!p[5]) e.sort = bottom - p[4] + 8; // flat things lie under people
     F.ents.push(e);
@@ -39,7 +39,8 @@ export function enterMap(id, tx, ty, dir) {
   }
   F.doors = [];
   for (const hs of m.houses || []) {
-    const img = house(hs.w, { style: hs.style || 'brick', windows: !hs.tower });
+    const raw = house(hs.w, { style: hs.style || 'brick', windows: !hs.tower }), img = repaint(raw, m.palette, 'h:' + hs.w + (hs.style || 'brick') + !hs.tower);
+    img.door = raw.door;
     const left = hs.x * T, top = hs.y * T;
     F.ents.push({ kind: 'prop', img, x: left, y: top + 6 * T, sort: top + 6 * T - 4, dark: hs.dark });
     block(left, top + 1 * T, left + hs.w * T, top + 6 * T);
@@ -49,7 +50,7 @@ export function enterMap(id, tx, ty, dir) {
     if (hs.to && !hs.shut) F.doors.push({ x: dx, y: top + 5 * T, w: T, h: T, to: hs.to, tx: hs.tx, ty: hs.ty });
     else F.doors.push({ x: dx, y: top + 5 * T, w: T, h: T, locked: true });
   }
-  for (const d of m.deco || []) F.ents.push({ kind: 'deco', d, x: d.x * T, y: d.y * T, sort: d.kind === 'spire' ? d.y * T - 1 : d.kind === 'clock' && d.big ? d.y * T + 140 : d.kind === 'rift' || d.kind === 'festival' ? -1e6 + d.y : d.y * T + (d.kind === 'bell' ? 40 : 0) });
+  for (const d of m.deco || []) F.ents.push({ kind: 'deco', d, x: d.x * T, y: d.y * T, sort: d.kind === 'spire' ? d.y * T - 1 : d.kind === 'clock' && d.big ? d.y * T + 140 : d.kind === 'rift' || d.kind === 'festival' || d.kind === 'icehole' || d.kind === 'spring' || d.kind === 'sun' || d.kind === 'gear' ? -1e6 + d.y : d.y * T + (d.kind === 'bell' ? 40 : 0) });
   for (const [x, y] of m.saves || []) F.ents.push({ kind: 'save', x: x * T + 16, y: y * T + 20, sort: -1e5 });
   for (const c of m.chests || []) {
     const e = { kind: 'chest', c, x: c.x * T, y: (c.y + 1) * T, sort: (c.y + 1) * T - 6 };
@@ -260,6 +261,39 @@ function drawDeco(g, e) {
     g.fillStyle = `rgba(160,120,255,${0.25 * p})`; g.beginPath(); g.arc(x + 16, y + 10, 26, 0, 7); g.fill();
     g.fillStyle = '#2a2040'; g.beginPath(); g.moveTo(x + 4, y + 18); g.lineTo(x + 10, y + 2); g.lineTo(x + 24, y); g.lineTo(x + 30, y + 16); g.closePath(); g.fill();
     g.fillStyle = `rgba(200,170,255,${p})`; g.fillRect(x + 14, y + 6, 3, 3); g.fillRect(x + 20, y + 10, 2, 2);
+  } else if (d.kind === 'oak') {
+    // the Hour Oak: an oak grown from Grandmother Ama's acorn, drawn twice its size
+    const img = prop('oak'), k = d.small ? 1 : 2;
+    g.drawImage(img, Math.round(x - img.width * k / 2), Math.round(y - img.height * k), img.width * k, img.height * k);
+    if (!d.small) for (let i = 0; i < 6; i++) { const a = t / 50 + i; g.fillStyle = `rgba(255,240,160,${0.4 + Math.sin(t / 15 + i) * 0.3})`; g.fillRect(Math.round(x + Math.cos(a) * 60), Math.round(y - 150 + Math.sin(a * 1.3) * 40), 2, 2); }
+  } else if (d.kind === 'anvil') {
+    g.fillStyle = '#2a2a34'; g.fillRect(x + 4, y + 14, 24, 6); g.fillRect(x + 10, y + 20, 12, 8); g.fillStyle = '#5a5a6a'; g.fillRect(x, y + 8, 32, 7); g.fillRect(x - 6, y + 8, 8, 4);
+    g.fillStyle = `rgba(255,${160 + Math.sin(t / 6) * 60},60,0.9)`; if ((t >> 3) % 6 === 0) g.fillRect(x + 14 + Math.sin(t) * 8, y + 2 - (t % 8), 2, 2);
+  } else if (d.kind === 'stone') {
+    // an era stone in the Hour Between: a standing stone with a coloured light
+    const col = d.col || '#a0a0ff', on = !d.if || flag(d.if);
+    g.fillStyle = '#3a3448'; g.fillRect(x + 6, y - 30, 20, 46); g.fillStyle = '#56506a'; g.fillRect(x + 8, y - 28, 6, 42);
+    g.globalAlpha = on ? 0.6 + Math.sin(t / 20 + x) * 0.3 : 0.15; g.fillStyle = col; g.beginPath(); g.arc(x + 16, y - 14, 6, 0, 7); g.fill(); g.globalAlpha = 1;
+  } else if (d.kind === 'spring') {
+    g.fillStyle = '#2a5a8a'; g.beginPath(); g.ellipse(x + 16, y + 16, 34, 14, 0, 0, 7); g.fill(); g.fillStyle = '#4a8ac0'; g.beginPath(); g.ellipse(x + 16, y + 14, 28, 10, 0, 0, 7); g.fill();
+    for (let k = 0; k < 4; k++) { g.fillStyle = 'rgba(220,240,255,0.8)'; g.fillRect(Math.round(x + 2 + ((t / 3 + k * 17) % 30)), y + 12 + (k % 2) * 4, 3, 1); }
+  } else if (d.kind === 'icehole') {
+    g.fillStyle = '#0c2238'; g.beginPath(); g.ellipse(x + 16, y + 16, 18, 9, 0, 0, 7); g.fill();
+    g.strokeStyle = '#d8f0ff'; g.lineWidth = 2; g.stroke();
+    g.fillStyle = 'rgba(160,220,255,0.6)'; g.fillRect(x + 10 + Math.sin(t / 30) * 6, y + 14, 3, 1);
+  } else if (d.kind === 'gear') {
+    const r = d.r || 20, a0 = t / (d.slow ? 90 : 40) * (d.rev ? -1 : 1);
+    g.fillStyle = d.col || '#8a6a30';
+    for (let k = 0; k < 10; k++) { const a = a0 + k / 10 * Math.PI * 2; g.save(); g.translate(x + Math.cos(a) * r, y + Math.sin(a) * r); g.rotate(a); g.fillRect(-4, -3, 8, 6); g.restore(); }
+    g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.fillStyle = '#2a1e10'; g.beginPath(); g.arc(x, y, r * 0.35, 0, 7); g.fill();
+  } else if (d.kind === 'sun') {
+    const gr = g.createRadialGradient(x, y, 10, x, y, 90); gr.addColorStop(0, 'rgba(255,120,60,0.9)'); gr.addColorStop(0.4, 'rgba(200,40,30,0.5)'); gr.addColorStop(1, 'rgba(120,0,0,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, 90, 0, 7); g.fill();
+  } else if (d.kind === 'motherstone') {
+    const p = 0.6 + Math.sin(t / 14) * 0.3;
+    g.fillStyle = `rgba(150,200,255,${0.3 * p})`; g.beginPath(); g.arc(x + 16, y + 6, 40, 0, 7); g.fill();
+    g.fillStyle = '#1c2440'; g.beginPath(); g.moveTo(x - 4, y + 22); g.lineTo(x + 6, y - 10); g.lineTo(x + 26, y - 14); g.lineTo(x + 36, y + 18); g.closePath(); g.fill();
+    g.fillStyle = `rgba(200,230,255,${p})`; g.fillRect(x + 12, y - 2, 3, 3); g.fillRect(x + 22, y + 6, 2, 2);
   } else if (d.kind === 'festival') {
     const cols = ['#e04848', '#f0c040', '#4890e0', '#60c060'];
     for (const row of [0, 1]) {
@@ -283,6 +317,12 @@ function drawEnt(g, e) {
     return;
   }
   if (e.kind === 'chest') { g.drawImage(prop(S.opened[F.map.id + ':' + e.c.id] ? 'chestopen' : 'chest'), e.x, e.y - 32); if (S.opened[F.map.id + ':' + e.c.id]) { g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(e.x + 6, e.y - 26, 20, 6); } return; }
+  if (e.kind === 'npc' && e.mon) {
+    if (!visible(e)) return;
+    shadow(g, e.x, e.y, 12 * (e.scale || 1));
+    drawMon(g, e.mon, { dir: e.dir, frame: F.t / 9, x: e.x, y: e.y, look: e.look, scale: e.scale || 1, t: F.t / 60 });
+    return;
+  }
   if (e.kind === 'npc') {
     if (!visible(e) || !e.sprite) return;
     const stone = e.statue || (F.map.stone && S.flags[F.map.stone] && !S.flags[F.map.stone + '_done']);
@@ -299,13 +339,13 @@ function drawEnt(g, e) {
   if (e.kind === 'foe') {
     if (e.gone) return;
     const m = e.m, sc = m.scale || 1, a = e.alpha ?? 1, look = e.flash > 0 ? null : m.look;
-    if (m.sprite.startsWith('m:')) {
+    if (m.sprite[0] === 'm') {
       shadow(g, e.x, e.y, 12 * sc);
-      drawMon(g, m.sprite.slice(2), { dir: e.dir, frame: e.atkFrame ?? e.t * 7, attacking: e.atkFrame !== undefined, x: e.x + (e.jx || 0), y: e.y + (e.jy || 0), look, scale: sc, alpha: a, t: e.t });
+      drawMon(g, monName(m.sprite), { dir: e.dir, frame: e.atkFrame ?? e.t * 7, attacking: e.atkFrame !== undefined, x: e.x + (e.jx || 0), y: e.y + (e.jy || 0), look, scale: sc, alpha: a, t: e.t });
     } else {
       shadow(g, e.x, e.y, 14 * sc);
       const moving = e.goal && !F.battle;
-      drawChar(g, m.sprite.slice(2), { anim: e.anim || 'walk', dir: e.dir, frame: e.frame ?? (moving ? 1 + Math.floor(e.step / 5) % 8 : 0), x: e.x + (e.jx || 0), y: e.y + (e.jy || 0), look, scale: sc, alpha: a });
+      drawChar(g, monName(m.sprite), { anim: e.anim || 'walk', dir: e.dir, frame: e.frame ?? (moving ? 1 + Math.floor(e.step / 5) % 8 : 0), x: e.x + (e.jx || 0), y: e.y + (e.jy || 0), look, scale: sc, alpha: a });
     }
     if (e.flash > 0) { e.flash--; }
   }
@@ -324,8 +364,21 @@ export function fieldDraw(g = ctx) {
   g.restore();
   if (F.map.tint === 'still' && !S.flags.spire_cleared) { g.fillStyle = 'rgba(70,90,140,0.22)'; g.fillRect(0, 0, W, H); }
   if (F.map.stone && S.flags[F.map.stone] && !S.flags[F.map.stone + '_done']) { g.fillStyle = 'rgba(80,90,130,0.25)'; g.fillRect(0, 0, W, H); }
+  drawWeather(g, sx, sy);
   if (F.map.tint === 'cave') { const gr = g.createRadialGradient(W / 2, H / 2, 80, W / 2, H / 2, 300); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(20,0,0,0.55)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
   if (F.flash) { g.fillStyle = F.flash.col; g.globalAlpha = Math.max(0, F.flash.a); g.fillRect(0, 0, W, H); g.globalAlpha = 1; F.flash.a -= F.flash.k; if (F.flash.a <= 0) F.flash = null; }
+}
+// tints and falling things for the new eras: snow on the tundra, ash in Emberfall, motes in the Hour Between
+function drawWeather(g, sx, sy) {
+  const tint = F.map.tint, t = F.t;
+  if (!tint) return;
+  const fall = (n, col, sp, size, drift) => { g.fillStyle = col; for (let i = 0; i < n; i++) { const x = ((i * 97 + Math.sin(t / 60 + i) * drift - sx * 0.6 + t * sp * 0.3 * (1 + (i % 3) * 0.3)) % W + W) % W, y = ((i * 53 - sy * 0.6 + t * sp * (1 + (i % 4) * 0.25)) % H + H) % H; g.fillRect(Math.round(x), Math.round(y), size, size); } };
+  if (tint === 'snow') { g.fillStyle = 'rgba(210,230,255,0.16)'; g.fillRect(0, 0, W, H); fall(70, 'rgba(255,255,255,0.85)', 0.8, 2, 12); }
+  else if (tint === 'ice') { g.fillStyle = 'rgba(60,120,200,0.2)'; g.fillRect(0, 0, W, H); fall(20, 'rgba(200,240,255,0.6)', 0.3, 1, 6); }
+  else if (tint === 'ember') { g.fillStyle = S.flags.ember_dawn ? 'rgba(255,160,90,0.10)' : 'rgba(170,40,20,0.22)'; g.fillRect(0, 0, W, H); fall(45, 'rgba(255,150,80,0.7)', -0.35, 2, 20); fall(30, 'rgba(80,70,70,0.7)', 0.4, 2, 10); }
+  else if (tint === 'void') { g.fillStyle = 'rgba(60,20,90,0.18)'; g.fillRect(0, 0, W, H); fall(30, 'rgba(200,160,255,0.6)', -0.2, 1, 30); }
+  else if (tint === 'brass') { g.fillStyle = 'rgba(140,100,40,0.10)'; g.fillRect(0, 0, W, H); fall(16, 'rgba(90,80,70,0.5)', -0.25, 3, 25); }
+  else if (tint === 'interval') { fall(40, 'rgba(255,230,160,0.7)', -0.15, 1, 40); }
 }
 // a burst of something at a spot, drawn in map space
 export function addFx(draw, life, extra = {}) { F.fx.push({ draw, life, t: 0, ...extra }); }

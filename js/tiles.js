@@ -175,6 +175,28 @@ export const PROPS = {
   fountain: ['terrain', 544, 384, 32, 64, [4, 4, 24, 20]],
   spirecone: ['base', 512, 672, 96, 224, null],
 };
+// a whole picture recoloured for a place: snow-covered ground, an ember-lit city, glacier ice, the void
+const paintCache = new Map();
+export function repaint(src, kind, key) {
+  if (!kind) return src;
+  const id = key && key + '|' + kind;
+  if (id && paintCache.has(id)) return paintCache.get(id);
+  const c = canvas(src.width, src.height);
+  c.x.drawImage(src, 0, 0);
+  const d = c.x.getImageData(0, 0, c.width, c.height), p = d.data;
+  for (let i = 0; i < p.length; i += 4) {
+    if (p[i + 3] < 160) continue;
+    const r = p[i], g = p[i + 1], b = p[i + 2], l = r * 0.3 + g * 0.55 + b * 0.15;
+    if (kind === 'snow') { const w = g > r && g > b ? 1 : 0.55; p[i] = r + (l * 0.45 + 140 - r) * w; p[i + 1] = g + (l * 0.45 + 146 - g) * w; p[i + 2] = b + (l * 0.4 + 165 - b) * w; }
+    else if (kind === 'ice') { p[i] = l * 0.62; p[i + 1] = l * 0.88; p[i + 2] = Math.min(255, l * 1.2 + 12); }
+    else if (kind === 'ember') { p[i] = Math.min(255, l * 1.3 + 6); p[i + 1] = l * 0.58; p[i + 2] = l * 0.36; }
+    else if (kind === 'void') { p[i] = l * 0.62; p[i + 1] = l * 0.45; p[i + 2] = Math.min(255, l * 0.95 + 10); }
+    else if (kind === 'brass') { p[i] = r * 0.85 + l * 0.15 + 12; p[i + 1] = g * 0.8 + l * 0.12 + 4; p[i + 2] = b * 0.6 + l * 0.1; }
+  }
+  c.x.putImageData(d, 0, 0);
+  if (id) paintCache.set(id, c);
+  return c;
+}
 const propCache = new Map();
 export function prop(name) {
   let c = propCache.get(name);

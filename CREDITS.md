@@ -149,8 +149,81 @@ The layers used, with their authors and licences:
 - `weapon/sword/dagger` — bluecarrot16, Johannes Sjölund (wulax), Matthew Krohn (makrohn) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
 - `weapon/sword/saber` — Daniel Eddeland (daneeklu), Johannes Sjölund (wulax), gr3yh47, bluecarrot16 (CC-BY-SA 3.0)
 
-## Music (CC0)
-- Juhani Junkala (SubspaceAudio): JRPG Music Pack #1 Exploration, #4 Calm, #5 Action, and Epic Boss Battle. https://opengameart.org/users/subspaceaudio
+The expansion added two heroes (Nilo and the redeemed Vesper) and the people of three new eras, built the same way. Layers added for them:
+
+- `beards/beard/medium` — ElizaWy (OGA-BY 3.0)
+- `beards/beard/winter` — bluecarrot16 (CC0)
+- `beards/mustache/handlebar` — ElizaWy (OGA-BY 3.0)
+- `beards/mustache/walrus` — ElizaWy (OGA-BY 3.0)
+- `cape/solid/bg` — Nila122, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `cape/solid/fg` — bluecarrot16, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `dress/slit` — Nila122, ElizaWy, bluecarrot16 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `facial/masks/plain` — Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `hair/bangs_bun` — ElizaWy, bluecarrot16 (CC0)
+- `hair/braid2` — Yamilian, bluecarrot16 (CC-BY-SA 3.0, GPL 3.0)
+- `hair/buzzcut` — ElizaWy (OGA-BY 3.0)
+- `hair/curly_long` — ElizaWy (OGA-BY 3.0)
+- `hair/high_ponytail` — JaidynReiman, ElizaWy, bluecarrot16 (OGA-BY 3.0)
+- `hair/long` — JaidynReiman, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hair/longhawk` — JaidynReiman, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hair/parted` — JaidynReiman, Joe White, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hair/swoop` — JaidynReiman, Manuel Riecke (MrBeast) (CC-BY-SA 3.0, GPL 3.0)
+- `hair/wavy` — JaidynReiman, Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `hat/cloth/hood_sack/adult` — Nila122, JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `hat/formal/bowler` — bluecarrot16 (CC-BY-SA 3.0, GPL 3.0)
+- `hat/formal/tophat` — bluecarrot16 (CC-BY-SA 3.0, GPL 3.0)
+- `hat/headband/tied` — Nila122 (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `hat/helmet/bascinet_round` — bluecarrot16, JaidynReiman, ElizaWy, Sander Frenken (castelonia) (OGA-BY 3.0, CC-BY-SA 4.0, CC-BY-SA 3.0, GPL 3.0)
+- `hat/helmet/greathelm` — bluecarrot16 (OGA-BY 3.0, CC-BY 3.0, CC-BY 4.0, GPL 2.0, GPL 3.0)
+- `hat/helmet/horned` — bluecarrot16, Shaun Williams, Matthew Krohn (makrohn), Johannes Sjölund (wulax), Sander Frenken (castelonia) (CC-BY-SA 3.0, GPL 3.0)
+- `hat/pirate/bandana` — bluecarrot16, Fabzy (CC-BY-SA 3.0)
+- `hat/visor/horned` — bluecarrot16, Shaun Williams, Matthew Krohn (makrohn), Johannes Sjölund (wulax), Sander Frenken (castelonia) (CC-BY-SA 3.0, GPL 3.0)
+- `legs/cuffed` — ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0)
+- `legs/cuffed/male` — JaidynReiman, ElizaWy, Bluecarrot16, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, GPL 3.0)
+- `legs/pantaloons` — Nila122, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, GPL 2.0, GPL 3.0, CC-BY-SA 3.0)
+- `legs/pantaloons/muscular` — Nila122, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `legs/pantaloons/thin` — Nila122, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 2.0, GPL 3.0)
+- `legs/pants/muscular` — ElizaWy, JaidynReiman, dalonedrau, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (CC-BY-SA 3.0, GPL 3.0)
+- `legs/skirts/belle` — bluecarrot16, Matthew Krohn (makrohn), Lanea Zimmerman (Sharm) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `legs/skirts/straight` — bluecarrot16, ElizaWy (OGA-BY 3.0, GPL 3.0)
+- `torso/clothes/blouse_longsleeve` — bluecarrot16, ElizaWy, Lanea Zimmerman (Sharm) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/longsleeve/formal` — bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/longsleeve/formal_striped` — bluecarrot16, Thane Brimhall (pennomi), laetissima, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/longsleeve/laced` — bluecarrot16, JaidynReiman, Stephen Challener (Redshrike), Johannes Sjölund (wulax) (CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/sleeveless/striped` — bluecarrot16, Matthew Krohn (makrohn), JaidynReiman, Marcel van de Steeg (MadMarcel), Nila122, Johannes Sjölund (wulax), Stephen Challener (Redshrike) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `torso/clothes/vest_open` — bluecarrot16, Thane Brimhall (pennomi), laetissima (CC-BY-SA 3.0, GPL 3.0)
+- `torso/jacket/frock` — bluecarrot16 (CC-BY-SA 3.0)
+- `torso/jacket/iverness` — bluecarrot16 (CC-BY-SA 3.0, GPL 3.0)
+- `torso/waist/belt_robe` — Johannes Sjölund (wulax), Matthew Krohn (makrohn) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `weapon/blunt/club` — bluecarrot16 (OGA-BY 3.0+, GPL 3.0, CC-BY 4.0)
+- `weapon/blunt/flail` — Benjamin K. Smith (BenCreating), bluecarrot16, Sander Frenken (castelonia) (CC-BY-SA 3.0, GPL 3.0)
+- `weapon/magic/s` — LordNeo, Michael Whitlock (bigbeargames), bluecarrot16 (CC0)
+- `weapon/magic/wand` — Matthew Krohn (makrohn) (CC-BY-SA 3.0, GPL 3.0, OGA-BY 3.0)
+- `weapon/polearm/longspear` — Pierre Vigier (pvigier), Johannes Sjölund (wulax), Inboxninja (CC-BY-SA 3.0)
+
+## More creatures (added in the expansion)
+These OpenGameArt sheets were cut and rearranged into one layout (four facings, idle frames then attack frames, feet on a common line)
+by a build script; some are drawn recoloured in the game (frost, ember, brass, void). The resulting sheets are in `assets/mon2/`
+and keep the licences below. Each page was checked for its licence before use.
+
+- **[LPC] Golem** — Stephen "Redshrike" Challener, commissioned by William.Thompsonj. CC-BY 3.0 / CC-BY 4.0 / OGA-BY 3.0 / GPL. https://opengameart.org/content/lpc-golem — used for the Iron Regulator, the Burnt-out Colossus and the Silent Colossus.
+- **[LPC] Wolf Animation** — Stephen "Redshrike" Challener (graphic artist), William.Thompsonj (contributor). CC-BY 3.0 / CC-BY 4.0 / OGA-BY 3.0 / GPL. https://opengameart.org/content/lpc-wolf-animation — tundra wolves and the Snowmane Matriarch. (Up/down frames 32x64 and side frames 64x32 were placed into 72x64 cells; left is the mirrored right.)
+- **[LPC] Spider** — Stephen "Redshrike" Challener (graphic artist), William.Thompsonj (contributor). CC-BY 3.0 / CC-BY 4.0 / OGA-BY 3.0 / GPL. https://opengameart.org/content/lpc-spider — wood, cog, snowcave and void spiders (sheets 01, 07, 10).
+- **LPC beetle** — Stephen "Redshrike" Challener, plus a link back to opengameart.org. CC-BY-SA 3.0 / CC-BY 3.0 / OGA-BY 3.0 / GPL. https://opengameart.org/content/lpc-beetle — the four beetles, and the racers at the Gearwork Fair.
+- **[LPC] Imp 2** — Stephen "Redshrike" Challener (graphic artist), William.Thompsonj (contributor). CC-BY 3.0 / CC-BY 4.0 / OGA-BY 3.0 / GPL. https://opengameart.org/content/lpc-imp-2 (and https://opengameart.org/content/lpc-imp) — soot imps and ember fiends.
+- **1 Hour LPC Enemy** — Stephen "Redshrike" Challener, and a link back to OpenGameArt.org. CC-BY-SA 3.0 / CC-BY 3.0 / OGA-BY 3.0 / GPL. https://opengameart.org/content/1-hour-lpc-enemy — icecave fliers and void wings (the sheet's grid lines were trimmed off).
+- **[LPC] bears, deer, lions and more ("lpc animals 2022")** — tapatilorenzo, with the giant rat and mushroom walker by Sevarihk. CC-BY 4.0. https://opengameart.org/content/lpc-bears-deer-lions-and-more — ice bear, Rimeback, echo bear, snow fox, lions, the Moon Elk (deer), sewer and ruin rats, toadstool men.
+- **[LPC] Centipede** — FiveBrosStopMosYT (thanks to bluecarrot16, bzt and Ragnar Random). CC-BY-SA 3.0 / 4.0. https://opengameart.org/content/lpc-centipede — lava centipede.
+- **Arachne** — AntumDeluge, based on LPC Spiders by Stephen Challener & William.Thompsonj and Svetlana Kushnariova's 24x32 characters. CC-BY 3.0 / OGA-BY 3.0. https://opengameart.org/content/arachne — the Time Weaver.
+- **LPC bull** — Evert, from Daniel Eddeland's cow and Nila122's lizard horns. CC-BY-SA 3.0 / GPL 3.0. https://opengameart.org/content/lpc-bull — tundra aurochs and the mammoth calf and herd (drawn recoloured).
+- **Animated Filthy Ectoplasm** — Reemax, from the original "Filthy Ectoplasm". CC0. https://opengameart.org/content/animated-filthy-ectoplasm — gaslight ghosts and echoes of the Hush.
+- **[LPC] Unfinished Bat Demon** — theidiotmachine. CC0. https://opengameart.org/content/lpc-unfinished-bat-demon — ashwing wraiths.
+
+## Music
+- Juhani Junkala (SubspaceAudio): JRPG Music Pack #1 Exploration, #4 Calm, #5 Action, and Epic Boss Battle (CC0). https://opengameart.org/users/subspaceaudio
+- Juhani Junkala: JRPG Music Pack #2 Towns ("Where Time Stands Still", "Home Town", "Sunshine Coast") and #3 Evil ("Ancient Evil Awakens", "Catacombs", "Apocalypse", "Witch's Lair", "Whispers From Beyond") (CC0). https://opengameart.org/content/jrpg-pack-2-towns , https://opengameart.org/content/jrpg-pack-3-evil ; #4 Calm also gives "Summer Memories" and "Innocence".
+- Juhani Junkala: the Golem & Tama RPG soundtrack ("GT RPG soundtrack"): "Sumia Harbor", "Golem's Theme", "Ice Hearts, Frozen Fire", "Town Settlers' Lament", "Final Boss", "Battle - Crystal World", "Hymn (Epic)", "Anthem". CC-BY 4.0. Attribution: Juhani Junkala, https://juhanijunkala.com, commissioned by bobjt for Golem & Tama. https://opengameart.org/content/gt-rpg-soundtrack
+- Hydrogene: "16-bit Battle Theme I" (CC0). https://opengameart.org/content/16-bit-battle-theme-i
 - OwlishMedia: "Mysterious Clock". https://opengameart.org/content/mysterious-clock
 - Haeldb: "Town in ruins loop". https://opengameart.org/content/town-in-ruins-loop
 
@@ -160,4 +233,4 @@ The tracks were converted to MP3 for the web.
 - Cubic 11 by ACh-K, SIL Open Font License 1.1 (fonts/Cubic_11-LICENSE.txt).
 
 ## Licence of this game's art
-Because the LPC art is CC-BY-SA, the composed character sheets in `assets/chars/` are shared under CC-BY-SA 3.0 as well.
+Because the LPC art is CC-BY-SA, the composed character sheets in `assets/chars/` and the rearranged creature sheets in `assets/mon2/` are shared under CC-BY-SA 3.0 as well (their CC-BY, OGA-BY and CC0 sources allow this).

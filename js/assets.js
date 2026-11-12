@@ -6,10 +6,13 @@ export const MONS = ['bat', 'bee', 'big_worm', 'eyeball', 'ghost', 'man_eater_fl
 
 const load = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => { console.warn('missing picture', src); res(null); }; im.src = src; });
 export const CHAR_META = await (await fetch('assets/chars/meta.json')).json();
+// more LPC creatures (wolves, bears, spiders, imps and others), normalised to one layout by the build script
+export const MON2_META = await (await fetch('assets/mon2/meta.json')).json();
 const pairs = [
   ...ATLASES.map((n) => ['t:' + n, 'assets/tiles/' + n + '.png']),
   ...Object.keys(CHAR_META).map((n) => ['c:' + n, 'assets/chars/' + n + '.png']),
   ...MONS.map((n) => ['m:' + n, 'assets/mon/' + n + '.png']),
+  ...Object.keys(MON2_META).map((n) => ['m2:' + n, 'assets/mon2/' + n + '.png']),
 ];
 const got = await Promise.all(pairs.map(([, src]) => load(src)));
 export const IMG = Object.fromEntries(pairs.map(([k], i) => [k, got[i]]));

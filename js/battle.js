@@ -10,7 +10,7 @@ import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } 
 import { input } from './input.js';
 import { sfx, playMusic, currentSong } from './audio.js';
 import { L } from './i18n.js';
-import { UI, menu, pressKey, statusTags, drawTags } from './ui.js';
+import { UI, menu, pressKey, statusTags, drawTags, wrap } from './ui.js';
 import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js';
 
 let B = null;
@@ -746,7 +746,7 @@ export function battleDraw() {
   });
   void n;
   if (B.victory) {
-    const v = B.victory, lines = [L(`勝利！　經驗 ${v.exp}　技點 ${v.tp}　${v.gold} 金`, `Victory!  EXP ${v.exp}  TP ${v.tp}  ${v.gold} gold`), ...(v.drops.length ? [L('得到：', 'Found: ') + v.drops.join(L('、', ', '))] : []), ...v.lines].slice(0, 7);
+    const v = B.victory, lines = [L(`勝利！　經驗 ${v.exp}　技點 ${v.tp}　${v.gold} 金`, `Victory!  EXP ${v.exp}  TP ${v.tp}  ${v.gold} gold`), ...(v.drops.length ? [L('得到：', 'Found: ') + v.drops.join(L('、', ', '))] : []), ...v.lines].flatMap((l) => wrap(l, W - 68)).slice(0, 7);
     windowBox(20, 30, W - 40, lines.length * 16 + 14);
     lines.forEach((l, i) => text(l, 34, 37 + i * 16, i === 0 ? '#ffe8a0' : '#f8f8f8'));
   }

@@ -4,7 +4,7 @@ import { ctx, W, H, text, textW, windowBox, bar } from './gfx.js';
 import { input } from './input.js';
 import { sfx } from './audio.js';
 import { L } from './i18n.js';
-import { menu, panel, notice, pressKey, pushRaw, removeRaw, descBox } from './ui.js';
+import { menu, panel, notice, pressKey, pushRaw, removeRaw, descBox, wrap, fit } from './ui.js';
 import { S, addItem, count } from './party.js';
 import { ITEMS, MONSTERS, ELEM, HEROES } from './data.js';
 import { drawMon, drawChar, monName } from './sprites.js';
@@ -36,7 +36,7 @@ export async function forgeMenu() {
           const [id, need] = RECIPES[i];
           windowBox(276, 16, 200, 30 + Object.keys(need).length * 15);
           text(L('需要：', 'Needs:'), 286, 22, '#f8e070');
-          Object.entries(need).forEach(([m, n], j) => { const ok = count(m) >= n; text(`${ITEMS[m].name}`, 286, 38 + j * 15, ok ? '#f8f8f8' : '#ff8080'); text(`${count(m)}/${n}`, 466, 38 + j * 15, ok ? '#a0ffa0' : '#ff8080', { align: 'right' }); });
+          Object.entries(need).forEach(([m, n], j) => { const ok = count(m) >= n; text(fit(ITEMS[m].name, 172 - textW(`${count(m)}/${n}`)), 286, 38 + j * 15, ok ? '#f8f8f8' : '#ff8080'); text(`${count(m)}/${n}`, 466, 38 + j * 15, ok ? '#a0ffa0' : '#ff8080', { align: 'right' }); });
           descBox(ITEMS[id].desc || itemLine(ITEMS[id]), H - 96);
         },
       });
@@ -79,17 +79,21 @@ function dexPage(id) {
   if (m.sprite[0] === 'm') drawMon(ctx, sp, { dir: 'd', frame: Date.now() / 160, x: 300, y: 118, look: m.look, scale: sc, t: Date.now() / 1000 });
   else drawChar(ctx, sp, { dir: 'd', frame: 0, x: 300, y: 118, look: m.look, scale: sc });
   ctx.restore();
-  text(m.name, 360, 14, m.boss ? '#ffd870' : '#ffe8a0');
+  // a long name takes two lines; the numbers follow under it
+  const nl = wrap(m.name, W - 372).slice(0, 2);
+  nl.forEach((l, i) => text(l, 360, 14 + i * 15, m.boss ? '#ffd870' : '#ffe8a0'));
   const st = S.dex[id] ? [`HP ${m.hp}`, `${L('攻', 'Atk')} ${m.pow}  ${L('魔', 'Mag')} ${m.mag}`, `${L('防', 'Def')} ${m.def}  ${L('魔防', 'MDf')} ${m.mdf}`, `${L('速', 'Spd')} ${m.spd}`] : [L('（打倒後才知道）', '(defeat it to learn more)')];
-  st.forEach((s, i) => text(s, 360, 32 + i * 15, '#e0e0f0'));
+  st.forEach((s, i) => text(s, 360, 17 + nl.length * 15 + i * 15, '#e0e0f0'));
   if (S.dex[id]) {
     const els = (a) => a.map((e) => (ELEM[e] ? L(ELEM[e][0], ELEM[e][1]) : e)).join(' ') || '—';
     text(L('弱點：', 'Weak: ') + els(m.weak), 230, 136, '#ffb060');
     text(L('抗性：', 'Resists: ') + els(m.res), 230, 152, '#a0a8c8');
     const dr = [...(m.drop ? [m.drop] : []), ...(m.drops || [])].map(([i]) => ITEMS[i].name).join(L('、', ', ')) || '—';
-    text(L('掉落：', 'Drops: ') + dr, 230, 168, '#a0ffa0');
-    text(`EXP ${m.exp}  ${L('金', 'G')} ${m.gold}  TP ${m.tp}`, 230, 184, '#c0c8e0');
-    text(L(`打倒了 ${S.dex[id]} 次`, `Defeated ${S.dex[id]} times`), 230, 200, '#c0c8e0');
+    // the drop list wraps inside the page instead of running off the screen
+    const dl = wrap(L('掉落：', 'Drops: ') + dr, W - 250);
+    dl.forEach((l, i) => text(l, 230, 168 + i * 16, '#a0ffa0'));
+    text(`EXP ${m.exp}  ${L('金', 'G')} ${m.gold}  TP ${m.tp}`, 230, 168 + dl.length * 16, '#c0c8e0');
+    text(L(`打倒了 ${S.dex[id]} 次`, `Defeated ${S.dex[id]} times`), 230, 184 + dl.length * 16, '#c0c8e0');
   }
 }
 

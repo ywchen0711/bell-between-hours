@@ -1,6 +1,6 @@
 // The field menu: items, techniques, equipment, who fights, status, saving and language.
 import { W, H, text, textW, windowBox, bar, ctx } from './gfx.js';
-import { menu, panel, notice, pressKey, ask, wrap, statusTags, drawTags } from './ui.js';
+import { menu, panel, notice, pressKey, ask, wrap, fit, statusTags, drawTags } from './ui.js';
 import { bestiary, questLog } from './systems.js';
 import { S, stats, techsOf, nameOf, addItem, count, member, save, party } from './party.js';
 import { ITEMS, TECHS, HEROES, LEARN, expFor } from './data.js';
@@ -91,7 +91,7 @@ async function itemMenu() {
     addItem(ids[k], -1); sfx('heal');
   }
 }
-function desc(s) { if (!s) return; windowBox(150, H - 40, W - 154, 36); text(s.length > 40 ? s.slice(0, 40) : s, 160, H - 31); }
+function desc(s) { if (!s) return; const ls = wrap(s, W - 174).slice(0, 2); windowBox(150, H - 46, W - 154, 42); ls.forEach((l, i) => text(l, 160, (ls.length > 1 ? H - 40 : H - 33) + i * 16)); }
 async function techMenu() {
   const m = await pickMember(L('誰的技？', 'Whose techniques?'));
   if (!m) return;
@@ -119,7 +119,7 @@ async function equipMenu() {
     const opts = Object.keys(S.inv).filter((id) => ITEMS[id] && ITEMS[id].type === sl && (sl !== 'weapon' || ITEMS[id].for === HEROES[m.id].weapon));
     const list = [...opts, ...(sl === 'acc' && m.equip.acc ? [null] : [])];
     if (!list.length) { sfx('buzz'); continue; }
-    const j = await menu(list.map((id) => ({ label: id ? ITEMS[id].name : L('（卸下）', '(remove)'), right: id ? count(id) : '' })), { x: 170, y: 90, w: 260, maxRows: 8, drawExtra: (i) => { const id = list[i]; if (!id) return; const old = m.equip[sl]; m.equip[sl] = id; const n = stats(m); m.equip[sl] = old; desc(`${L('攻', 'Atk')} ${s.atk}→${n.atk}  ${L('防', 'Def')} ${s.def}→${n.def}  ${L('魔', 'Mag')} ${s.mag}→${n.mag}  ${L('速', 'Spd')} ${s.spd}→${n.spd}`); if (sl === 'acc' && ITEMS[id].desc) { windowBox(150, H - 76, W - 154, 34); text(ITEMS[id].desc.slice(0, 40), 160, H - 67, '#ffe8a0'); } } });
+    const j = await menu(list.map((id) => ({ label: id ? ITEMS[id].name : L('（卸下）', '(remove)'), right: id ? count(id) : '' })), { x: 170, y: 90, w: 260, maxRows: 8, drawExtra: (i) => { const id = list[i]; if (!id) return; const old = m.equip[sl]; m.equip[sl] = id; const n = stats(m); m.equip[sl] = old; desc(`${L('攻', 'Atk')} ${s.atk}→${n.atk}  ${L('防', 'Def')} ${s.def}→${n.def}  ${L('魔', 'Mag')} ${s.mag}→${n.mag}  ${L('速', 'Spd')} ${s.spd}→${n.spd}`); if (sl === 'acc' && ITEMS[id].desc) { windowBox(150, H - 82, W - 154, 34); text(fit(ITEMS[id].desc, W - 174), 160, H - 73, '#ffe8a0'); } } });
     if (j < 0) continue;
     const id = list[j];
     if (m.equip[sl]) addItem(m.equip[sl], 1);
@@ -155,7 +155,7 @@ async function statusMenu() {
     text(`EXP ${m.exp}　${L('下一級', 'Next')} ${expFor(m.lv + 1) - m.exp}　TP ${m.tp}`, 110, 52, '#c0c8e0');
     const rows = [['HP', `${m.hp}/${s.maxhp}`], ['MP', `${m.mp}/${s.maxmp}`], [L('攻擊', 'Attack'), s.atk], [L('魔力', 'Magic'), s.mag], [L('防禦', 'Defence'), s.def], [L('魔防', 'M.Def'), s.mdf], [L('速度', 'Speed'), s.spd]];
     rows.forEach(([a, b], i) => { text(a, 110, 76 + i * 18, '#a0a8c8'); text(String(b), 260, 76 + i * 18, '#f8f8f8', { align: 'right' }); });
-    ['weapon', 'armor', 'acc'].forEach((sl, i) => text(m.equip[sl] ? ITEMS[m.equip[sl]].name : '—', 290, 76 + i * 18));
+    ['weapon', 'armor', 'acc'].forEach((sl, i) => text(fit(m.equip[sl] ? ITEMS[m.equip[sl]].name : '—', W - 40 - 296), 290, 76 + i * 18));
     wrap(L('技：', 'Techniques: ') + techsOf(m).map((t) => TECHS[t].name).join(L('、', ', ')), W - 80).slice(0, 4).forEach((ln, i) => text(ln, 40, 210 + i * 15, '#c0e0c0'));
   });
   await pressKey();
@@ -189,6 +189,7 @@ function shopDesc(id) {
   let s = it.desc || '';
   if (it.type === 'weapon') s = `${L('攻擊', 'Attack')} +${it.atk * 2}　${L('給', 'For')} ${party().concat(S.members).filter((m, i, a) => a.indexOf(m) === i && HEROES[m.id].weapon === it.for).map(nameOf).join(L('、', ', ')) || L('（還沒有人能用）', '(no one yet)')}`;
   if (it.type === 'armor') s = `${L('防禦', 'Defence')} +${it.def}` + (it.bonus && it.bonus.mdf ? `　${L('魔防', 'M.Def')} +${it.bonus.mdf}` : '') + (it.bonus && it.bonus.hp ? `　HP +${it.bonus.hp}` : '');
-  windowBox(40, H - 40, W - 44, 36); text(s, 50, H - 31);
+  // left of the gold window, so the gold stays in sight while shopping
+  const ls = wrap(s, W - 200).slice(0, 3); windowBox(40, H - 62, W - 180, 58); ls.forEach((l, i) => text(l, 50, H - 56 + i * 16));
 }
 export { ask, member };

@@ -74,18 +74,20 @@ export function drawChar(g, name, { anim = 'walk', dir = 'd', frame = 0, x, y, l
 export const animFrames = (name, anim) => (CHAR_META[name] && CHAR_META[name][anim] ? CHAR_META[name][anim].n : 0);
 export const hasAnim = (name, anim) => !!(CHAR_META[name] && CHAR_META[name][anim]);
 
-// creatures: frame size, frames in a row, which frames are the idle loop and which the attack
+// creatures: frame size, frames in a row, which frames are the idle loop and which the attack;
+// foot is how far below the cell's middle the lowest pixel is, so it lands on the shadow;
+// clip cuts off a shadow painted into the sheet (fliers get the game's own shadow on the ground)
 export const MON = {
-  bat: { fs: 64, idle: [0, 1, 2, 3, 4, 5, 6], atk: [0, 1, 2, 3], foot: 26, fly: 10 },
-  bee: { fs: 32, idle: [0, 1, 2, 3, 4, 5], atk: [0, 1, 2, 3], foot: 12, fly: 12, scale: 1.4 },
-  big_worm: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 4], foot: 28 },
-  eyeball: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 6], foot: 26, fly: 4 },
-  ghost: { fs: 64, idle: [0, 1, 2], atk: [3, 4, 5], foot: 26, fly: 6 },
-  man_eater_flower: { fs: 128, idle: [0, 1, 2, 3], atk: [4, 5, 4], foot: 54 },
-  pumpking: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 4], foot: 28 },
-  slime: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 4], foot: 26 },
-  small_worm: { fs: 64, idle: [0, 1, 2], atk: [3, 4, 3], foot: 26 },
-  snake: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 6], foot: 26 },
+  bat: { fs: 64, idle: [0, 1, 2, 3, 4, 5, 6], atk: [0, 1, 2, 3], foot: 16, fly: 10 },
+  bee: { fs: 32, idle: [0, 1, 2, 3, 4, 5], atk: [0, 1, 2, 3], foot: 9, clip: 26, fly: 12, scale: 1.4 },
+  big_worm: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 4], foot: 25 },
+  eyeball: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 6], foot: 12, clip: 44, fly: 4 },
+  ghost: { fs: 64, idle: [0, 1, 2], atk: [3, 4, 5], foot: 15, clip: 46, fly: 6 },
+  man_eater_flower: { fs: 128, idle: [0, 1, 2, 3], atk: [4, 5, 4], foot: 38 },
+  pumpking: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 4], foot: 26 },
+  slime: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 4], foot: 15 },
+  small_worm: { fs: 64, idle: [0, 1, 2], atk: [3, 4, 3], foot: 16 },
+  snake: { fs: 64, idle: [0, 1, 2, 3], atk: [4, 5, 6], foot: 16 },
 };
 // the second set of creatures (OpenGameArt LPC sheets, normalised): fw x fh cells, feet `pad` above the bottom
 for (const [n, m] of Object.entries(MON2_META)) MON[n] = { ...m, src: 'm2:' + n, foot: 0, fly: m.fly };
@@ -108,6 +110,7 @@ export function drawMon(g, name, { dir = 'd', frame = 0, attacking = false, x, y
   if (name === 'man_eater_flower') row = row === 0 ? 1 : row;
   const sc = scale * (m.scale || 1), s = m.fs * sc, lift = m.fly ? m.fly + Math.sin(t * 4) * 2 : 0;
   g.globalAlpha = alpha;
-  g.drawImage(img, f * m.fs, row * m.fs, m.fs, m.fs, Math.round(x - s / 2), Math.round(y - m.foot * sc - s / 2 - lift), s, s);
+  const ch = m.clip && !attacking ? m.clip : m.fs;
+  g.drawImage(img, f * m.fs, row * m.fs, m.fs, ch, Math.round(x - s / 2), Math.round(y - m.foot * sc - s / 2 - lift), s, ch * sc);
   g.globalAlpha = 1;
 }

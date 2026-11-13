@@ -3,7 +3,35 @@
 import { ctx, W, H, text, textW, windowBox, HAND, HAND_D } from './gfx.js';
 import { input } from './input.js';
 import { sfx } from './audio.js';
-import { speaker } from './i18n.js';
+import { speaker, L } from './i18n.js';
+
+// short coloured status tags so the panels show who is poisoned, slowed, shielded... at a glance
+const STTAG = {
+  poison: ['毒', 'PSN', '#c080ff'], slow: ['緩', 'SLW', '#c0a0ff'], haste: ['速', 'HST', '#80e0ff'], barrier: ['盾', 'SHD', '#a0c8ff'],
+  regen: ['再生', 'RGN', '#90ffb0'], brk: ['防↓', 'DEF↓', '#ff9070'], stun: ['麻', 'STN', '#ffff80'], freeze: ['凍', 'FRZ', '#c0f0ff'],
+  iced: ['冰甲', 'ICE', '#a0e8ff'],
+};
+const BUFTAG = { pow: ['攻↑', 'ATK↑', '#ffb070'], def: ['防↑', 'DEF↑', '#ffd870'], spd: ['速↑', 'SPD↑', '#80f0ff'] };
+// status: the statuses object; buff: optional multipliers ({ pow: 1.35 })
+export function statusTags(status, buff) {
+  const out = Object.keys(status || {}).filter((k) => status[k] && STTAG[k]).map((k) => ({ s: L(STTAG[k][0], STTAG[k][1]), col: STTAG[k][2] }));
+  for (const k of Object.keys(buff || {})) if (buff[k] > 1 && BUFTAG[k]) out.push({ s: L(BUFTAG[k][0], BUFTAG[k][1]), col: BUFTAG[k][2] });
+  return out;
+}
+// split tags into pages that each fit in maxW pixels
+export function tagPages(tags, maxW) {
+  const pages = []; let cur = [], w = 0;
+  for (const t of tags) { const tw = textW(t.s); if (cur.length && w + tw > maxW) { pages.push(cur); cur = []; w = 0; } cur.push(t); w += tw + 4; }
+  if (cur.length) pages.push(cur);
+  return pages;
+}
+// draw the page of tags that is showing now (they take turns about once a second)
+export function drawTags(tags, x, y, maxW) {
+  if (!tags.length) return;
+  const pages = tagPages(tags, maxW), pg = pages[Math.floor(performance.now() / 1000) % pages.length];
+  let cx = x;
+  for (const t of pg) { text(t.s, cx, y, t.col); cx += textW(t.s) + 4; }
+}
 
 const stack = [];
 export const UI = {

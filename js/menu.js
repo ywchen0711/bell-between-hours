@@ -1,6 +1,6 @@
 // The field menu: items, techniques, equipment, who fights, status, saving and language.
-import { W, H, text, windowBox, bar, ctx } from './gfx.js';
-import { menu, panel, notice, pressKey, ask, wrap } from './ui.js';
+import { W, H, text, textW, windowBox, bar, ctx } from './gfx.js';
+import { menu, panel, notice, pressKey, ask, wrap, statusTags, drawTags } from './ui.js';
 import { bestiary, questLog } from './systems.js';
 import { S, stats, techsOf, nameOf, addItem, count, member, save, party } from './party.js';
 import { ITEMS, TECHS, HEROES, LEARN, expFor } from './data.js';
@@ -29,6 +29,7 @@ function partyPanel() {
         text(`HP ${m.hp}/${s.maxhp}`, 66, y + 20); text(`MP ${m.mp}/${s.maxmp}`, 186, y + 20, '#a8c8ff');
         bar(66, y + 38, 110, m.hp, s.maxhp, '#60e080'); bar(186, y + 38, 100, m.mp, s.maxmp, '#60a0ff');
         text(`TP ${m.tp}`, 66, y + 46, '#c0c0d8');
+        if (m.hp > 0) drawTags(statusTags(m.status), 78 + textW(`TP ${m.tp}`), y + 46, 290 - 78 - textW(`TP ${m.tp}`));
         return;
       }
       // six friends: two columns of three
@@ -41,6 +42,7 @@ function partyPanel() {
       text(`HP ${m.hp}`, x + 42, y + 38); bar(x + 42, y + 54, 94, m.hp, s.maxhp, '#60e080');
       text(`MP ${m.mp}`, x + 42, y + 62, '#a8c8ff'); bar(x + 42, y + 78, 94, m.mp, s.maxmp, '#60a0ff');
       text(`TP ${m.tp}`, x + 6, y + 80, '#c0c0d8');
+      if (m.hp > 0) drawTags(statusTags(m.status), x + 14 + textW(`TP ${m.tp}`), y + 80, 124 - textW(`TP ${m.tp}`));
     });
   });
 }
@@ -149,6 +151,7 @@ async function statusMenu() {
     windowBox(20, 20, W - 40, H - 40);
     drawChar(ctx, HEROES[m.id].sprite, { x: 60, y: 110, dir: 'd', scale: 1.5 });
     text(nameOf(m), 110, 34, '#ffe8a0'); text(`Lv ${m.lv}`, 200, 34);
+    if (m.hp > 0) drawTags(statusTags(m.status), 212 + textW(`Lv ${m.lv}`), 34, W - 252 - textW(`Lv ${m.lv}`));
     text(`EXP ${m.exp}　${L('下一級', 'Next')} ${expFor(m.lv + 1) - m.exp}　TP ${m.tp}`, 110, 52, '#c0c8e0');
     const rows = [['HP', `${m.hp}/${s.maxhp}`], ['MP', `${m.mp}/${s.maxmp}`], [L('攻擊', 'Attack'), s.atk], [L('魔力', 'Magic'), s.mag], [L('防禦', 'Defence'), s.def], [L('魔防', 'M.Def'), s.mdf], [L('速度', 'Speed'), s.spd]];
     rows.forEach(([a, b], i) => { text(a, 110, 76 + i * 18, '#a0a8c8'); text(String(b), 260, 76 + i * 18, '#f8f8f8', { align: 'right' }); });

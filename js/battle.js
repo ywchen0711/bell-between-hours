@@ -10,7 +10,7 @@ import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } 
 import { input } from './input.js';
 import { sfx, playMusic, currentSong } from './audio.js';
 import { L } from './i18n.js';
-import { UI, menu, pressKey } from './ui.js';
+import { UI, menu, pressKey, statusTags, drawTags } from './ui.js';
 import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js';
 
 let B = null;
@@ -721,7 +721,14 @@ export function battleDraw() {
     g.restore();
     // the name of what is pointed at
     const m = tg.main;
-    if (m) { const s = m.kind === 'foe' ? `${m.m.name}　HP ${m.hp}` : nameOf(m.h); windowBox(W / 2 - textW(s) / 2 - 12, 4, textW(s) + 24, 22); text(s, W / 2, 9, '#f8f8f8', { align: 'center' }); }
+    if (m) {
+      const s = m.kind === 'foe' ? `${m.m.name}　HP ${m.hp}` : nameOf(m.h);
+      // the target's statuses ride along in the name box
+      const tags = m.kind === 'foe' ? statusTags(m.status, m.buff) : m.h.hp > 0 ? statusTags(m.h.status, m.buff) : [];
+      const tw = tags.length ? Math.min(W - 60 - textW(s), tags.reduce((a, t) => a + textW(t.s) + 4, 4)) : 0, bw = textW(s) + tw;
+      windowBox(W / 2 - bw / 2 - 12, 4, bw + 24, 22); text(s, W / 2 - bw / 2, 9, '#f8f8f8');
+      if (tw) drawTags(tags, W / 2 - bw / 2 + textW(s) + 8, 9, tw - 4);
+    }
   }
   if (B.log) { const w = textW(B.log) + 28; windowBox(W / 2 - w / 2, 4, w, 22); text(B.log, W / 2, 9, '#ffe8a0', { align: 'center' }); }
   // the party's panel
@@ -730,8 +737,8 @@ export function battleDraw() {
   B.heroes.forEach((p, i) => {
     const x = 14 + i * pw, s = stats(p.h), dead = p.h.hp <= 0;
     text(nameOf(p.h), x, H - 56, dead ? '#a06060' : B.cmdFor === p ? '#ffe070' : '#f8f8f8');
-    const st = p.h.status, marks = [['poison', '毒', 'P', '#c080ff'], ['slow', '緩', 'S', '#c0a0ff'], ['haste', '速', 'H', '#80e0ff'], ['barrier', '盾', 'B', '#a0c8ff'], ['regen', '生', 'R', '#90ffb0']].filter((k) => st[k[0]]);
-    marks.slice(0, 2).forEach((k, j) => text(L(k[1], k[2]), x + 48 + j * 12, H - 56, k[3]));
+    // every status under the name, in the free space left of MP (pages take turns if they do not fit)
+    if (!dead) drawTags(statusTags(p.h.status, p.buff), x, H - 41, pw - 76);
     text(`${p.h.hp}`, x + pw - 24, H - 56, dead ? '#ff6060' : p.h.hp < s.maxhp / 4 ? '#ffd060' : '#f8f8f8', { align: 'right' });
     text(`${p.h.mp}`, x + pw - 24, H - 41, '#a8c8ff', { align: 'right' });
     text('HP', x + pw - 70, H - 56, '#8890b0'); text('MP', x + pw - 70, H - 41, '#8890b0');

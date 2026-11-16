@@ -201,6 +201,21 @@ The expansion added two heroes (Nilo and the redeemed Vesper) and the people of 
 - `weapon/magic/wand` — Matthew Krohn (makrohn) (CC-BY-SA 3.0, GPL 3.0, OGA-BY 3.0)
 - `weapon/polearm/longspear` — Pierre Vigier (pvigier), Johannes Sjölund (wulax), Inboxninja (CC-BY-SA 3.0)
 
+Gear layers added for the paper doll (what the heroes wear and wield shows on them; the layers are stacked in the game from `assets/doll/`):
+
+- `arms/bracers` — Matthew Krohn (makrohn), Johannes Sjölund (wulax), JaidynReiman (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `neck/amulet/dangle` — bluecarrot16, AntumDeluge (CC0)
+- `weapon/magic/diamond` — bluecarrot16 (OGA-BY 3.0+, GPL 3.0, CC-BY 4.0)
+- `weapon/magic/loop` — bluecarrot16 (OGA-BY 3.0+, GPL 3.0, CC-BY 4.0)
+- `weapon/magic/simple` — bluecarrot16, Dr. Jamgo (CC0)
+- `weapon/polearm/dragonspear` — Daniel Eddeland (daneeklu), gr3yh47, Johannes Sjölund (wulax) (CC-BY-SA 3.0)
+- `weapon/polearm/trident` — Daniel Eddeland (daneeklu), gr3yh47, Johannes Sjölund (wulax) (CC-BY-SA 3.0)
+- `weapon/ranged/bow/arrow` — Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0)
+- `weapon/ranged/bow/great` — Daniel Eddeland (daneeklu), gr3yh47, Johannes Sjölund (wulax), Pierre Vigier (pvigier) (CC-BY-SA 3.0)
+- `weapon/ranged/bow/recurve` — Daniel Eddeland (daneeklu), gr3yh47, Johannes Sjölund (wulax), Pierre Vigier (pvigier) (CC-BY-SA 3.0)
+- `weapon/sword/glowsword` — bluecarrot16, tskaufma, Johannes Sjölund (wulax) (OGA-BY 3.0, CC-BY-SA 3.0)
+- `weapon/sword/longsword` — Johannes Sjölund (wulax), bluecarrot16 (OGA-BY 3.0, CC-BY-SA 3.0)
+
 ## More creatures (added in the expansion)
 These OpenGameArt sheets were cut and rearranged into one layout (four facings, idle frames then attack frames, feet on a common line)
 by a build script; some are drawn recoloured in the game (frost, ember, brass, void). The resulting sheets are in `assets/mon2/`

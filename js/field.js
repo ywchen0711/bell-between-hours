@@ -4,7 +4,7 @@
 import { ctx, W, H, T, canvas, text } from './gfx.js';
 import { MAPS, LEGEND, BLOCK } from './maps.js';
 import { renderGround, prop, PROPS, house, repaint } from './tiles.js';
-import { drawChar, drawMon, shadow, dirOf, MON, monName } from './sprites.js';
+import { drawChar, drawMon, shadow, dirOf, MON, monName, hasAnim } from './sprites.js';
 import { MONSTERS, HEROES } from './data.js';
 import { S, party } from './party.js';
 import { input } from './input.js';
@@ -76,10 +76,86 @@ export function spawnFoes() {
     if (!visible(gdef) || S.beaten[F.map.id + ':' + gdef.id] === 'gone' || (F.beatenHere && F.beatenHere.has(gdef.id))) continue;
     const offs = [[0, 0], [1.3, 0.9], [-1.3, 0.9], [0, 1.8], [1.4, -0.9]];
     gdef.list.forEach((mid, i) => {
-      const [ox, oy] = offs[i % offs.length], x = (gdef.x + ox) * T + 16, y = (gdef.y + oy) * T + 24;
-      const f = { kind: 'foe', mid, m: MONSTERS[mid], group: gdef, x, y, home: [x, y], dir: 'd', step: 0, t: Math.random() * 6, wt: Math.random() * 90 };
+      const [ox, oy] = offs[i % offs.length];
+      const f = { kind: 'foe', mid, m: MONSTERS[mid], group: gdef, x: (gdef.x + ox) * T + 16, y: (gdef.y + oy) * T + 24, dir: 'd', step: 0, t: Math.random() * 6, wt: Math.random() * 90 };
+      // a monster never starts inside a bush, behind a tree or a house, or on top of another monster:
+      // it takes the nearest clear spot round where the map put it (bosses stay exactly where they were put)
+      if (!gdef.boss) {
+        const sx = f.x, sy = f.y;
+        for (let k = 0; k < 60; k++) {
+          const a = k * 2.4, r = k ? 6 + k * 2.2 : 0, x = sx + Math.cos(a) * r, y = sy + Math.sin(a) * r * 0.8;
+          if (k && !walkable(x, y)) continue;
+          if (k < 59 && (!walkable(x, y) || hiddenAt(f, x, y) || crowdAt(f, x, y))) continue;
+          f.x = x; f.y = y; break;
+        }
+      }
+      f.home = [f.x, f.y];
       F.foes.push(f); F.ents.push(f);
     });
+  }
+}
+
+// ---------- keeping everyone in sight ----------
+// Each picture that stands on the map gets a coarse map of where it is solid (4px cells), so we can tell how
+// much of a monster or a hero a tree, bush or house drawn after it would cover.
+function occGrid(img) {
+  if (img._occ) return img._occ;
+  const w = img.width, h = img.height, cw = Math.ceil(w / 4), ch = Math.ceil(h / 4), cells = new Uint8Array(cw * ch);
+  let d;
+  try { const c = img.getContext ? img : canvas(w, h); if (!img.getContext) c.x.drawImage(img, 0, 0); d = (img.getContext ? img.getContext('2d') : c.x).getImageData(0, 0, w, h).data; } catch (e) { d = null; }
+  if (d) for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 100) cells[(y >> 2) * cw + (x >> 2)]++;
+  for (let i = 0; i < cells.length; i++) cells[i] = cells[i] >= 5 ? 1 : 0;
+  img._occ = { cw, ch, cells };
+  return img._occ;
+}
+// the part of the screen a body takes up (a little inside its picture), feet at the bottom
+export function bodyBox(e, x = e.x, y = e.y) {
+  const m = e.m, sc = (m && m.scale) || 1;
+  if (e.kind === 'foe' && m.sprite[0] === 'm') {
+    const mm = MON[monName(m.sprite)];
+    if (mm && mm.fw) { const w = mm.fw * sc * 0.55, h = (mm.fh - mm.pad) * sc * 0.8 + (mm.fly || 0); return [x - w / 2, y - h, x + w / 2, y]; }
+    if (mm) { const s = mm.fs * sc * (mm.scale || 1), h = s * 0.5 + (mm.fly || 0); return [x - s * 0.3, y - h, x + s * 0.3, y]; }
+  }
+  return [x - 13 * sc, y - 48 * sc, x + 13 * sc, y];
+}
+// how much of a box a standing picture covers (0..1)
+function coverBy(e, box) {
+  const img = e.img, left = Math.round(e.x), top = Math.round(e.y - img.height);
+  const x0 = Math.round(Math.max(box[0], left)), x1 = Math.round(Math.min(box[2], left + img.width)), y0 = Math.round(Math.max(box[1], top)), y1 = Math.round(Math.min(box[3], top + img.height));
+  if (x1 <= x0 || y1 <= y0) return 0;
+  const o = occGrid(img);
+  let hit = 0;
+  for (let y = y0; y < y1; y += 4) for (let x = x0; x < x1; x += 4) hit += o.cells[((y - top) >> 2) * o.cw + ((x - left) >> 2)] || 0;
+  return hit * 16 / Math.max(1, (box[2] - box[0]) * (box[3] - box[1]));
+}
+// would something standing at x, y be hidden behind a prop or a house?
+export function hiddenAt(e, x, y, limit = 0.12) {
+  const box = bodyBox(e, x, y);
+  for (const p of F.ents) if (p.kind === 'prop' && p.sort > y && coverBy(p, box) > limit) return true;
+  return false;
+}
+// would it stand on top of another monster?
+function crowdAt(e, x, y) {
+  const a = bodyBox(e, x, y), aw = a[2] - a[0], ah = a[3] - a[1];
+  for (const o of F.foes) {
+    if (o === e || o.gone) continue;
+    const b = bodyBox(o), ix = Math.min(a[2], b[2]) - Math.max(a[0], b[0]), iy = Math.min(a[3], b[3]) - Math.max(a[1], b[1]);
+    if (ix > 0 && iy > 0 && ix * iy > 0.18 * Math.min(aw * ah, (b[2] - b[0]) * (b[3] - b[1]))) return true;
+  }
+  return false;
+}
+export { crowdAt };
+// trees, bushes and houses in front of a monster or a hero fade so they can be seen through
+function fadeCovers(list) {
+  const actors = list.filter((e) => (e.kind === 'foe' && !e.gone && (e.alpha ?? 1) > 0.05) || (e.kind === 'hero' && !e.hidden));
+  for (const p of list) {
+    if (p.kind !== 'prop') continue;
+    let want = 1;
+    for (const a of actors) {
+      if (a.sort >= p.sort) continue;
+      if (coverBy(p, bodyBox(a)) > (a.kind === 'foe' || F.battle ? 0.1 : 0.25)) { want = F.battle ? 0.3 : 0.45; break; }
+    }
+    p.fade = p.fade === undefined ? want : p.fade + (want - p.fade) * (F.instantFade ? 1 : 0.25);
   }
 }
 // the party as it is now (after someone joins or the order changes)
@@ -170,10 +246,15 @@ export function fieldUpdate(canAct) {
   if (!F.battle) for (const f of F.foes) {
     f.t += 1 / 60;
     if (f.group.still || F.lock || !canAct) continue;
-    if (--f.wt < 0) { f.wt = 60 + Math.random() * 120; const a = Math.random() * Math.PI * 2; f.goal = [f.home[0] + Math.cos(a) * 28, f.home[1] + Math.sin(a) * 20]; }
+    if (--f.wt < 0) {
+      f.wt = 60 + Math.random() * 120; const a = Math.random() * Math.PI * 2;
+      f.goal = [f.home[0] + Math.cos(a) * 28, f.home[1] + Math.sin(a) * 20];
+      // never wander in behind a tree or a bush, or into another monster
+      if (!walkable(f.goal[0], f.goal[1]) || hiddenAt(f, f.goal[0], f.goal[1]) || crowdAt(f, f.goal[0], f.goal[1])) f.goal = null;
+    }
     if (f.goal) {
       const dx = f.goal[0] - f.x, dy = f.goal[1] - f.y, d = Math.hypot(dx, dy);
-      if (d < 2 || !tryMove(f, dx / d * 0.6, dy / d * 0.6)) f.goal = null;
+      if (d < 2 || (crowdAt(f, f.x + dx / d * 4, f.y + dy / d * 4) && !crowdAt(f, f.x, f.y)) || !tryMove(f, dx / d * 0.6, dy / d * 0.6)) f.goal = null;
       else { f.dir = dirOf(dx, dy); f.step++; }
     }
   }
@@ -307,7 +388,7 @@ function drawDeco(g, e) {
   }
 }
 function drawEnt(g, e) {
-  if (e.kind === 'prop') { if (e.dark) g.globalAlpha = 0.85; g.drawImage(e.img, Math.round(e.x), Math.round(e.y - e.img.height)); g.globalAlpha = 1; return; }
+  if (e.kind === 'prop') { g.globalAlpha = (e.dark ? 0.85 : 1) * (e.fade ?? 1); g.drawImage(e.img, Math.round(e.x), Math.round(e.y - e.img.height)); g.globalAlpha = 1; return; }
   if (e.kind === 'deco') return drawDeco(g, e);
   if (e.kind === 'save') {
     const t = F.t / 20;
@@ -333,19 +414,34 @@ function drawEnt(g, e) {
   if (e.kind === 'hero') {
     if (e.hidden) return;
     shadow(g, e.x, e.y);
-    drawChar(g, e.sprite, { anim: e.anim || 'walk', dir: e.dir, frame: e.frame || 0, x: e.x + (e.jx || 0), y: e.y + (e.jy || 0), alpha: e.alpha ?? 1, look: e.look });
+    let anim = e.anim || 'walk', frame = e.frame || 0;
+    // a flinch when struck (the hurt pose's first frames), unless in the middle of a move
+    if (e.flinch > 0 && anim === 'walk' && (!e.h || e.h.hp > 0) && hasAnim(e.sprite, 'hurt')) { anim = 'hurt'; frame = e.flinch > 9 ? 1 : 0; }
+    const x = e.x + (e.jx || 0) + (e.rx || 0), y = e.y + (e.jy || 0) + (e.ry || 0), alpha = e.alpha ?? 1;
+    // after-images while dashing in or out
+    if (e.trailPos) e.trailPos.forEach((t, i) => { if (i % 3 === 2) drawChar(g, e.sprite, { anim: t[3] || 'walk', dir: t[2], frame: t[4] || 0, x: t[0], y: t[1], alpha: alpha * (0.32 - i * 0.03), look: e.look }); });
+    drawChar(g, e.sprite, { anim, dir: e.dir, frame, x, y, alpha, look: e.look });
+    if (e.flash > 0) { drawChar(g, e.sprite, { anim, dir: e.dir, frame, x, y, alpha: alpha * 0.5 * e.flash / 6, look: 'white' }); e.flash--; }
     return;
   }
   if (e.kind === 'foe') {
     if (e.gone) return;
-    const m = e.m, sc = m.scale || 1, a = e.alpha ?? 1, look = e.flash > 0 ? null : m.look;
+    const m = e.m, sc = m.scale || 1, a = e.alpha ?? 1, look = m.look, x = e.x + (e.jx || 0) + (e.rx || 0), y = e.y + (e.jy || 0) + (e.ry || 0);
+    // a struck monster flashes white over its own picture
+    const flash = e.flash > 0 ? Math.min(1, e.flash / 6) * (e.dying ? 0.9 : 0.75) : 0;
     if (m.sprite[0] === 'm') {
       shadow(g, e.x, e.y, 12 * sc);
-      drawMon(g, monName(m.sprite), { dir: e.dir, frame: e.atkFrame ?? e.t * 7, attacking: e.atkFrame !== undefined, x: e.x + (e.jx || 0), y: e.y + (e.jy || 0), look, scale: sc, alpha: a, t: e.t });
+      const o = { dir: e.dir, frame: e.atkFrame ?? e.t * 7, attacking: e.atkFrame !== undefined, x, y, look, scale: sc, alpha: a, t: e.t };
+      drawMon(g, monName(m.sprite), o);
+      if (flash) drawMon(g, monName(m.sprite), { ...o, look: 'white', alpha: a * flash });
     } else {
       shadow(g, e.x, e.y, 14 * sc);
-      const moving = e.goal && !F.battle;
-      drawChar(g, monName(m.sprite), { anim: e.anim || 'walk', dir: e.dir, frame: e.frame ?? (moving ? 1 + Math.floor(e.step / 5) % 8 : 0), x: e.x + (e.jx || 0), y: e.y + (e.jy || 0), look, scale: sc, alpha: a });
+      const moving = e.goal && !F.battle, sp = monName(m.sprite);
+      let anim = e.anim || 'walk', frame = e.frame ?? (moving ? 1 + Math.floor(e.step / 5) % 8 : 0);
+      if (e.flinch > 0 && anim === 'walk' && hasAnim(sp, 'hurt')) { anim = 'hurt'; frame = e.flinch > 9 ? 1 : 0; }
+      const o = { anim, dir: e.dir, frame, x, y, look, scale: sc, alpha: a };
+      drawChar(g, sp, o);
+      if (flash) drawChar(g, sp, { ...o, look: 'white', alpha: a * flash });
     }
     if (e.flash > 0) { e.flash--; }
   }
@@ -359,8 +455,11 @@ export function fieldDraw(g = ctx) {
   const list = F.ents.filter((e) => e.x > sx - 260 && e.x < sx + W + 260 && e.y > sy - 40 && e.y < sy + H + 300);
   for (const e of list) if (e.kind !== 'prop' && e.kind !== 'deco' && e.kind !== 'save') e.sort = e.y;
   list.sort((a, b) => a.sort - b.sort);
+  fadeCovers(list);
+  // marks on the ground (a caster's rune ring) go under everyone
+  for (const fx of F.fx) if (fx.under) fx.draw(g, fx.t / fx.life, fx);
   for (const e of list) drawEnt(g, e);
-  for (const fx of F.fx) fx.draw(g, fx.t / fx.life, fx);
+  for (const fx of F.fx) if (!fx.under) fx.draw(g, fx.t / fx.life, fx);
   g.restore();
   if (F.map.tint === 'still' && !S.flags.spire_cleared) { g.fillStyle = 'rgba(70,90,140,0.22)'; g.fillRect(0, 0, W, H); }
   if (F.map.stone && S.flags[F.map.stone] && !S.flags[F.map.stone + '_done']) { g.fillStyle = 'rgba(80,90,130,0.25)'; g.fillRect(0, 0, W, H); }

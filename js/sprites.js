@@ -44,6 +44,8 @@ function sheet(key, look) {
     } else if (kind === 'brass') {
       const l = r * 0.3 + g * 0.55 + b * 0.15;
       p[i] = l * 0.95 + 30; p[i + 1] = l * 0.75 + 16; p[i + 2] = l * 0.35;
+    } else if (kind === 'white') {
+      p[i] = 255; p[i + 1] = 255; p[i + 2] = 255;
     } else if (kind === 'gold') {
       const l = r * 0.3 + g * 0.55 + b * 0.15;
       p[i] = l * 0.8 + 70; p[i + 1] = l * 0.7 + 50; p[i + 2] = l * 0.3 + 10;
@@ -53,6 +55,9 @@ function sheet(key, look) {
   tinted.set(id, c);
   return c;
 }
+
+// a sheet that has been swapped for a new one (the paper doll) drops its old recoloured copies
+export function forgetSheet(key) { for (const k of [...tinted.keys()]) if (k.startsWith(key + '|')) tinted.delete(k); }
 
 export function shadow(g, x, y, w = 14) {
   g.fillStyle = 'rgba(0,0,0,0.28)';

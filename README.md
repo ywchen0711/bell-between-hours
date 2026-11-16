@@ -16,6 +16,7 @@ dying sun, where Vesper the Bellwright must face the machine she built to hold o
 - **Battles happen on the map.** Walk into monsters you can see, and the party spreads out to fight right there.
 - **Active time gauges.** Each friend acts when their gauge fills; the game waits while you choose.
 - **Where people stand matters.** Techniques reach one foe, a line, a circle or everyone, and the ground they would hit is marked as you aim.
+- **What you wear shows.** Every sword, staff, bow, spear, scythe, armour and some accessories change how the hero looks on the map, in battle and in the equip screen (which shows the new piece before you put it on). Heroes swing, jab, shoot and cast with their weapon, flinch when hit, and cheer when they win.
 - **Combined techniques.** 26 two- and three-person combos across six heroes.
 - **Seven ages, six heroes, 79 kinds of monster (20 bosses)** — bosses with their own rules: machines that wind up (thunder snaps the spring), ice armour that only fire melts, summoners, a foe whose weakness keeps changing.
 - **Statuses and accessories:** haste, slow, shields, regeneration, freezing, break; accessories that stop poison or stuns, double gold, counter-attack, halve MP costs and more.

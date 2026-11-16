@@ -4,7 +4,7 @@
 // user through the target, a circle round the target or round the user, or everyone. Two or three
 // friends whose gauges are all full can combine their techniques.
 import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js';
-import { F, addFx, tryMove, walkable, refreshParty } from './field.js';
+import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js';
 import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js';
 import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js';
 import { input } from './input.js';
@@ -34,8 +34,54 @@ function burst(x, y, el = 'none', size = 1) {
     g.globalAlpha = 1;
   }, 24);
 }
-function slashFx(x, y, dir = 1) {
-  addFx((g, k) => { g.globalAlpha = 1 - k; g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.beginPath(); g.arc(x, y, 18, -1.2 * dir + k, 0.6 * dir + k * 2); g.stroke(); g.globalAlpha = 1; }, 12);
+// a blade's crescent: a thick bright sweep that thins and fades, with sparks thrown off where it bit
+function slashFx(x, y, dir = 1, el = 'none') {
+  const [c1, c2] = FXCOL[el] || FXCOL.none, a0 = dir > 0 ? -2.2 : 2.2 - Math.PI, sweep = 2.6 * (dir > 0 ? 1 : -1);
+  addFx((g, k) => {
+    const end = a0 + sweep * Math.min(1, k * 2.2), start = a0 + sweep * Math.max(0, k * 2.2 - 0.9);
+    g.globalAlpha = Math.max(0, 1 - k * 1.1);
+    for (const [w, col, r] of [[7, c2, 20], [3, c1, 20], [1.5, '#ffffff', 23]]) { g.strokeStyle = col; g.lineWidth = w * (1 - k * 0.6); g.beginPath(); g.ellipse(x, y, r, r * 0.8, 0, Math.min(start, end), Math.max(start, end)); g.stroke(); }
+    if (k > 0.3) for (let i = 0; i < 6; i++) { const an = i * 1.05 + dir, d = 6 + (k - 0.3) * 40; g.fillStyle = i % 2 ? c1 : '#ffffff'; g.fillRect(Math.round(x + Math.cos(an) * d), Math.round(y + Math.sin(an) * d * 0.7), 2, 2); }
+    g.globalAlpha = 1;
+  }, 16);
+}
+// a spear's or a staff's jab: a bright streak driven into the target and a star where it lands
+function thrustFx(from, x, y, el = 'none') {
+  const [c1, c2] = FXCOL[el] || FXCOL.none, an = Math.atan2(y - (from.y - 26), x - from.x);
+  addFx((g, k) => {
+    const len = 34 * Math.min(1, k * 3), bx = x - Math.cos(an) * 30, by = y - Math.sin(an) * 30;
+    g.globalAlpha = 1 - k;
+    g.strokeStyle = c2; g.lineWidth = 6 * (1 - k); g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + Math.cos(an) * len, by + Math.sin(an) * len); g.stroke();
+    g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + Math.cos(an) * len, by + Math.sin(an) * len); g.stroke();
+    const r = 4 + k * 10; g.fillStyle = c1; g.beginPath();
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? r * 0.35 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    g.fill(); g.globalAlpha = 1;
+  }, 14);
+}
+// the right blow for the weapon in hand
+function strikeFx(p, t, el) {
+  const a = HEROES[p.id].atkAnim, y = t.y - (t.ht || 48) * 0.5;
+  if (a === 'thrust') thrustFx(p, t.x, y, el || 'none');
+  else slashFx(t.x, y, p.x < t.x ? 1 : -1, el || 'none');
+}
+// a ring of runes turning under someone casting
+function castFx(e, el = 'light', life = 30) {
+  const [c1, c2] = FXCOL[el] || FXCOL.light;
+  addFx((g, k) => {
+    const a = Math.min(1, k * 4) * (1 - Math.max(0, k - 0.75) * 4), x = e.x, y = e.y - 2, t = k * 6;
+    g.globalAlpha = a * 0.9; g.strokeStyle = c2; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, 22, 9, 0, 0, 7); g.stroke();
+    g.strokeStyle = c1; g.lineWidth = 1; g.beginPath(); g.ellipse(x, y, 16, 6.5, 0, 0, 7); g.stroke();
+    for (let i = 0; i < 6; i++) { const an = t + i * Math.PI / 3; g.fillStyle = c1; g.fillRect(Math.round(x + Math.cos(an) * 19) - 1, Math.round(y + Math.sin(an) * 7.8) - 1, 3, 2); }
+    for (let i = 0; i < 5; i++) { const ph = (k * 2 + i / 5) % 1; g.globalAlpha = a * (1 - ph); g.fillStyle = i % 2 ? c1 : '#ffffff'; g.fillRect(Math.round(x - 14 + i * 7), Math.round(y - ph * 40), 2, 2); }
+    g.globalAlpha = 1;
+  }, life, { under: true });
+}
+// grey puffs where something falls
+function poof(x, y, size = 1) {
+  addFx((g, k) => {
+    for (let i = 0; i < 9; i++) { const an = i / 9 * Math.PI * 2, r = (4 + k * 22) * size; g.globalAlpha = (1 - k) * 0.7; g.fillStyle = i % 3 ? '#d8d8e0' : '#9898a8'; g.beginPath(); g.arc(x + Math.cos(an) * r, y + Math.sin(an) * r * 0.5 - k * 10, Math.max(0.5, (5 - k * 3) * size), 0, 7); g.fill(); }
+    g.globalAlpha = 1;
+  }, 26);
 }
 function ring(x, y, r, el) {
   const [a, b] = FXCOL[el] || FXCOL.none;
@@ -83,19 +129,39 @@ async function walkTo(e, x, y, frames = 16) {
   if (e.kind === 'hero' || e.m.sprite[0] !== 'm') e.frame = 0;
 }
 // play a sprite's action frames
+const DV = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] };
+// how far a body leans in on the blow: a jab goes furthest, a bow kicks back a little
+const LUNGE = { thrust: 9, slash: 5, shoot: -3, spellcast: 0 };
+const HITK = { slash: 0.67, thrust: 0.56 };
 async function act(e, anim, hitAt = 0.5, onHit) {
   const sprite = e.kind === 'hero' ? e.sprite : monName(e.m.sprite);
+  B.actor = e;
+  const v = DV[e.dir] || DV.d;
   if (e.kind === 'foe' && e.m.sprite[0] === 'm') {
-    const seq = MON[sprite].atk;
-    for (let i = 0; i < seq.length * 4; i++) { e.atkFrame = Math.floor(i / 4); if (onHit && i === Math.floor(seq.length * 4 * hitAt)) await onHit(); await wait(1); }
-    e.atkFrame = undefined;
+    // creatures rear back a touch, then lunge at the moment of the bite (casters only lean)
+    const seq = MON[sprite].atk, N = seq.length * 4, hit = Math.floor(N * hitAt), reach = anim === 'spellcast' ? 4 : 14;
+    for (let i = 0; i < N; i++) {
+      e.atkFrame = Math.floor(i / 4);
+      const k = i <= hit ? -0.25 + 1.25 * (i / Math.max(1, hit)) ** 2 : 1 - (i - hit) / Math.max(1, N - hit);
+      e.jx = v[0] * reach * k; e.jy = v[1] * reach * 0.7 * k;
+      if (onHit && i === hit) await onHit();
+      await wait(1);
+    }
+    e.atkFrame = undefined; e.jx = 0; e.jy = 0;
     return;
   }
   const a = hasAnim(sprite, anim) ? anim : hasAnim(sprite, 'slash') ? 'slash' : hasAnim(sprite, 'thrust') ? 'thrust' : 'spellcast';
-  const n = animFrames(sprite, a), per = a === 'shoot' ? 3 : 4;
+  // the blow lands on the frame where the weapon meets the target
+  const n = animFrames(sprite, a), per = a === 'shoot' ? 3 : 4, N = n * per, hit = Math.floor(N * (hitAt === 0.5 && HITK[a] ? HITK[a] : hitAt)), reach = e.kind === 'hero' && !HEROES[e.id].melee && a !== 'spellcast' ? -2 : LUNGE[a] || 0;
   e.anim = a;
-  for (let i = 0; i < n * per; i++) { e.frame = Math.floor(i / per); if (onHit && i === Math.floor(n * per * hitAt)) await onHit(); await wait(1); }
-  e.anim = 'walk'; e.frame = 0;
+  if (a === 'spellcast') castFx(e, e.kind === 'hero' ? HEROES[e.id].el : 'dark', N + 8);
+  for (let i = 0; i < N; i++) {
+    e.frame = Math.floor(i / per);
+    if (reach) { const k = i <= hit ? (i / Math.max(1, hit)) ** 2 : 1 - (i - hit) / Math.max(1, N - hit); e.jx = v[0] * reach * k; e.jy = v[1] * reach * 0.6 * k; }
+    if (onHit && i === hit) await onHit();
+    await wait(1);
+  }
+  e.anim = 'walk'; e.frame = 0; e.jx = 0; e.jy = 0;
 }
 
 // ---------- numbers ----------
@@ -139,13 +205,33 @@ function hurtFoe(f, d, crit, el) {
   if (f.charging && el === 'bolt') { f.charging = false; f.status.stun = true; popNum({ x: f.x, y: f.y - 28, ht: f.ht }, L('發條被電斷了！', 'The spring snaps!'), '#ffff80'); } sfx(crit ? 'crit' : el === 'fire' ? 'fire' : el === 'bolt' ? 'bolt' : 'hit');
   popNum(f, String(d), crit ? '#ffe060' : elemMul(f, el) > 1 ? '#ffb060' : elemMul(f, el) < 1 ? '#a0a8c0' : '#ffffff');
   if (elemMul(f, el) > 1) popNum({ x: f.x, y: f.y - 14, ht: f.ht }, L('弱點！', 'Weak!'), '#ffd060');
-  shakeOne(f);
+  hitReact(f);
 }
 function hurtHero(p, d) {
-  p.h.hp = Math.max(0, p.h.hp - d); sfx('hurt'); popNum(p, String(d), '#ff9090'); shakeOne(p);
-  if (p.h.hp <= 0) { p.anim = 'hurt'; p.frame = 5; p.gauge = 0; p.h.status = {}; }
+  p.h.hp = Math.max(0, p.h.hp - d); sfx('hurt'); popNum(p, String(d), '#ff9090'); hitReact(p);
+  // a fallen friend crumples through the whole fall, not straight to the floor
+  if (p.h.hp <= 0) { p.anim = 'hurt'; p.frame = 0; p.falling = 0; p.gauge = 0; p.h.status = {}; }
 }
-function shakeOne(e) { let k = 0; const step = () => { e.jx = k % 2 ? 3 : -3; if (++k < 8) setTimeout(step, 25); else e.jx = 0; }; step(); }
+// a blow lands: a white flash, a flinch and a shove away from whoever struck (counted down in battleUpdate)
+function hitReact(e) {
+  const by = B && B.actor && B.actor !== e ? B.actor : null;
+  const dx = by ? e.x - by.x : (e.kind === 'hero' ? 1 : -1), dy = by ? e.y - by.y : 0, d = Math.hypot(dx, dy) || 1;
+  e.flinch = 14; e.kbx = dx / d; e.kby = dy / d; e.flash = 6;
+}
+function tickReact(e) {
+  if (e.flinch > 0) {
+    e.flinch--;
+    const k = e.flinch / 14, wob = (e.flinch % 2 ? 1.5 : -1.5) * k, push = Math.sin(Math.min(1, k * 1.6) * Math.PI * 0.5);
+    e.rx = e.kbx * 8 * push + wob; e.ry = e.kby * 4 * push;
+  } else { e.rx = 0; e.ry = 0; }
+  if (e.falling !== undefined) {
+    if (e.h && e.h.hp > 0) delete e.falling;
+    else { e.falling++; e.anim = 'hurt'; e.frame = Math.min(5, Math.floor(e.falling / 4)); if (e.falling > 24) delete e.falling; }
+  }
+  // ghosts trail behind anyone dashing in
+  if (e.dash) { (e.trailPos ||= []).unshift([e.x + (e.jx || 0), e.y + (e.jy || 0), e.dir, e.anim, e.frame]); e.trailPos.length = Math.min(e.trailPos.length, 9); }
+  else if (e.trailPos && e.trailPos.length) e.trailPos.pop();
+}
 function heal(p, n) { const s = stats(p.h); const was = p.h.hp; p.h.hp = Math.min(s.maxhp, p.h.hp + n); if (was <= 0 && p.h.hp > 0) { p.anim = 'walk'; p.frame = 0; } popNum(p, String(n), '#90ffb0'); sparkle(p.x, p.y); }
 
 // which foes a technique reaches
@@ -215,7 +301,10 @@ async function placeParty() {
     const [o, back] = slots[i] || [0, 1];
     let x = C.x + vx * (D + back * 30) + ux * o * 52, y = C.y + vy * (D + back * 30) + uy * o * 40;
     // step in until the spot is free ground
-    for (let k = 0; k < 24 && !walkable(x, y); k++) { const a = k * 0.9, r = 8 + k * 3; x += Math.cos(a) * r * 0.3; y += Math.sin(a) * r * 0.3; }
+    // (and, if it can be had nearby, where no tree or bush stands in front of them)
+    const x0 = x, y0 = y;
+    for (let k = 0; k < 30 && (!walkable(x, y) || hiddenAt(p, x, y)); k++) { const a = k * 0.9, r = 8 + k * 3; x += Math.cos(a) * r * 0.3; y += Math.sin(a) * r * 0.3; }
+    if (!walkable(x, y)) { x = x0; y = y0; for (let k = 0; k < 24 && !walkable(x, y); k++) { const a = k * 0.9, r = 8 + k * 3; x += Math.cos(a) * r * 0.3; y += Math.sin(a) * r * 0.3; } }
     // no free ground there: stand close beside the leader instead
     if (!walkable(x, y)) {
       const offs = [[36, 0], [-36, 0], [0, 30], [36, 30], [-36, 30], [0, -30], [72, 0], [-72, 0]];
@@ -390,15 +479,17 @@ async function approach(p, t, gap = 30) {
   const dx = p.x - t.x, side = dx >= 0 ? 1 : -1;
   let x = t.x + side * gap, y = t.y + 2;
   if (!walkable(x, y)) x = t.x - side * gap;
-  await walkTo(p, x, y, 12);
+  p.dash = true;
+  await walkTo(p, x, y, 10);
+  p.dash = false;
   face(p, t);
 }
-async function goHome(e) { await walkTo(e, e.home[0], e.home[1], 12); const others = e.kind === 'hero' ? liveFoes() : liveHeroes(); if (others.length) face(e, centre(others)); }
+async function goHome(e) { e.dash = true; await walkTo(e, e.home[0], e.home[1], 12); e.dash = false; const others = e.kind === 'hero' ? liveFoes() : liveHeroes(); if (others.length) face(e, centre(others)); }
 async function heroAttack(p, t) {
   const H = HEROES[p.id];
   if (H.melee) {
     await approach(p, t);
-    await act(p, H.atkAnim, 0.5, async () => { slashFx(t.x, t.y - 24, p.x < t.x ? 1 : -1); const { d, crit } = heroDamage([p], t, { kind: 'phys', pow: 1 }); hurtFoe(t, d, crit); });
+    await act(p, H.atkAnim, 0.5, async () => { strikeFx(p, t); const { d, crit } = heroDamage([p], t, { kind: 'phys', pow: 1 }); hurtFoe(t, d, crit); });
     await goHome(p);
   } else {
     face(p, t);
@@ -431,16 +522,16 @@ async function doTech(p, id, t, tgt) {
       const targets = reach('line', p, tgt);
       let ex = tgt.x + dx / len * 50, ey = tgt.y + dy / len * 50;
       if (!walkable(ex, ey)) { ex = tgt.x + dx / len * 20; ey = tgt.y + dy / len * 20; }
-      p.alpha = 0.6; sfx('slash');
+      p.alpha = 0.6; p.dash = true; sfx('slash');
       await walkTo(p, ex, ey, 10);
-      p.alpha = 1;
-      for (const f of targets) { slashFx(f.x, f.y - 24); const { d, crit } = heroDamage([p], f, t); hurtFoe(f, d, crit, t.el); drainTo([p], d, t); afterHit(f, t); }
+      p.alpha = 1; p.dash = false;
+      for (const f of targets) { slashFx(f.x, f.y - (f.ht || 48) * 0.5, p.x < f.x ? 1 : -1, t.el); const { d, crit } = heroDamage([p], f, t); hurtFoe(f, d, crit, t.el); drainTo([p], d, t); afterHit(f, t); }
       await wait(10);
       await goHome(p);
     } else if (t.area === 'self') {
       await approach(p, tgt, 20);
       const spot = { x: p.x, y: p.y };
-      for (const dir of ['d', 'l', 'u', 'r']) { p.dir = dir; p.anim = 'slash'; p.frame = 3; await wait(3); }
+      for (const dir of ['d', 'l', 'u', 'r', 'd']) { p.dir = dir; p.anim = 'slash'; for (const f of [1, 3, 4]) { p.frame = f; await wait(2); } }
       sfx('slash'); ring(spot.x, spot.y - 10, t.r, t.el);
       for (const f of reach('self', spot, spot, t.r)) { const { d, crit } = heroDamage([p], f, t); hurtFoe(f, d, crit, t.el); drainTo([p], d, t); afterHit(f, t); }
       p.anim = 'walk'; p.frame = 0;
@@ -448,7 +539,7 @@ async function doTech(p, id, t, tgt) {
       await goHome(p);
     } else {
       await approach(p, tgt);
-      await act(p, HEROES[p.id].atkAnim, 0.5, async () => { burst(tgt.x, tgt.y - 24, t.el || 'light'); const { d, crit } = heroDamage([p], tgt, t); hurtFoe(tgt, d, crit, t.el); drainTo([p], d, t); afterHit(tgt, t); });
+      await act(p, HEROES[p.id].atkAnim, 0.5, async () => { strikeFx(p, tgt, t.el || 'light'); burst(tgt.x, tgt.y - 24, t.el || 'light'); const { d, crit } = heroDamage([p], tgt, t); hurtFoe(tgt, d, crit, t.el); drainTo([p], d, t); afterHit(tgt, t); });
       await goHome(p);
     }
   } else {
@@ -551,8 +642,11 @@ async function afterHits() {
   const dead = B.foes.filter((f) => f.hp <= 0 && !f.gone);
   if (!dead.length) return;
   sfx('die');
-  for (let k = 0; k <= 20; k++) { for (const f of dead) f.alpha = 1 - k / 20; await wait(1); }
-  for (const f of dead) f.gone = true;
+  for (const f of dead) { f.flash = 10; f.dying = true; }
+  await wait(8);
+  for (const f of dead) poof(f.x, f.y - 6, Math.min(2, (f.m.scale || 1) * ((f.ht || 48) / 48)));
+  for (let k = 0; k <= 20; k++) { for (const f of dead) { f.alpha = 1 - k / 20; f.jy = k * 0.6; } await wait(1); }
+  for (const f of dead) { f.gone = true; f.jy = 0; }
 }
 
 // ---------- a monster's turn ----------
@@ -610,7 +704,7 @@ async function foeTurn(f) {
   if (mv.melee && mv.area !== 'line') {
     await approach(f, tgt, 30);
     for (let k = 0; k < (mv.hits || 1); k++) {
-      await act(f, hasAnim(monName(f.m.sprite), 'slash') ? 'slash' : 'thrust', 0.5, async () => { slashFx(tgt.x, tgt.y - 24); if (tgt.h.hp > 0) hitHero(f, tgt, mv); });
+      await act(f, hasAnim(monName(f.m.sprite), 'slash') ? 'slash' : 'thrust', 0.5, async () => { slashFx(tgt.x, tgt.y - 26, f.x < tgt.x ? 1 : -1, mv.el); if (tgt.h.hp > 0) hitHero(f, tgt, mv); });
     }
     await goHome(f);
   } else if (mv.melee && mv.area === 'line') {
@@ -657,7 +751,7 @@ function hitHero(f, p, mv) {
 // ---------- the end ----------
 function finish(result) {
   B.over = true;
-  for (const p of B.heroes) { p.anim = 'walk'; p.frame = 0; p.alpha = 1; p.jx = 0; }
+  for (const p of B.heroes) { p.anim = 'walk'; p.frame = 0; p.alpha = 1; p.jx = 0; p.jy = 0; p.flinch = 0; p.rx = 0; p.ry = 0; p.dash = false; p.trailPos = null; delete p.cheer; delete p.falling; }
   F.camTarget = null; F.battle = null;
   const r = B.resolve; const song = B.prevSong; B = null;
   r({ result, song });
@@ -682,6 +776,7 @@ async function victory() {
   if (!B.boss) playMusic(null);
   sfx('level');
   B.victory = { exp, gold, tp, drops, lines, t: 0 };
+  for (const p of B.heroes) if (p.h.hp > 0) { face(p, { x: p.x, y: p.y + 10 }); p.cheer = 0; }
   for (let i = 0; i < 30; i++) { await wait(1); B.victory.t++; }
   // the key is read by a window on the dialogue stack, which sees input inside the frame
   await pressKey();
@@ -704,6 +799,12 @@ async function flee() {
 // ---------- one frame ----------
 export function battleUpdate() {
   if (!B) return;
+  for (const e of B.heroes) {
+    tickReact(e);
+    // the victory pose: arms up through the cast, held at the top
+    if (e.cheer !== undefined && e.h.hp > 0) { e.cheer++; e.anim = 'spellcast'; e.frame = Math.min(5, Math.floor(e.cheer / 4)); }
+  }
+  for (const e of B.foes) tickReact(e);
   const ws = B.waiters; B.waiters = [];
   for (const w of ws) { if (--w.n <= 0) w.r(); else B.waiters.push(w); }
 }

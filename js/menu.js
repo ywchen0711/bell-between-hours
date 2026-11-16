@@ -7,7 +7,8 @@ import { ITEMS, TECHS, HEROES, LEARN, expFor } from './data.js';
 import { L, LANG, setLang } from './i18n.js';
 import { sfx } from './audio.js';
 import { onSave, refreshParty } from './field.js';
-import { drawChar } from './sprites.js';
+import { drawChar, hasAnim, animFrames } from './sprites.js';
+import { preview } from './doll.js';
 import { MAPS, mapName } from './maps.js';
 
 function goldPanel() {
@@ -107,9 +108,32 @@ async function techMenu() {
     m.mp -= t.mp; sfx('heal');
   }
 }
+// the hero, turning round and now and then swinging, in what they wear or what the cursor is on
+function dollPanel(m, get) {
+  return panel(() => {
+    const bx = 4, by = 4, bw = 142, bh = 196, eq = get();
+    windowBox(bx, by, bw, bh);
+    const sp = preview(m.id, eq) || HEROES[m.id].sprite, t = performance.now() / 1000;
+    const H2 = HEROES[m.id], atk = H2.atkAnim, cyc = t % 7.2, dir = ['d', 'l', 'u', 'r'][Math.floor(t / 1.2) % 4];
+    // two turns walking, then the attack facing right
+    const swing = cyc > 4.8 && hasAnim(sp, atk), n = swing ? animFrames(sp, atk) : 9;
+    const frame = swing ? Math.min(n - 1, Math.floor((cyc - 4.8) * 10) % (n + 4)) : 1 + Math.floor(t * 8) % 8;
+    ctx.save(); ctx.beginPath(); ctx.rect(bx + 3, by + 3, bw - 6, bh - 30); ctx.clip();
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(bx + bw / 2, by + 150, 26, 8, 0, 0, 7); ctx.fill();
+    drawChar(ctx, sp, { anim: swing ? atk : 'walk', dir: swing ? 'r' : dir, frame, x: bx + bw / 2, y: by + 150, scale: 2 });
+    ctx.restore();
+    const same = ['weapon', 'armor', 'acc'].every((k) => eq[k] === m.equip[k]);
+    text(same ? L('現在的樣子', 'As worn') : L('試穿中', 'Trying on'), bx + bw / 2, by + bh - 22, same ? '#a0a8c8' : '#ffe8a0', { align: 'center' });
+  });
+}
 async function equipMenu() {
   const m = await pickMember(L('誰的裝備？', 'Whose equipment?'));
   if (!m) return;
+  let trying = null;
+  const closeDoll = dollPanel(m, () => trying || m.equip);
+  try { await equipSlots(m, (eq) => { trying = eq; }); } finally { closeDoll(); }
+}
+async function equipSlots(m, tryOn) {
   for (;;) {
     const slots = ['weapon', 'armor', 'acc'], names = [L('武器', 'Weapon'), L('防具', 'Armour'), L('飾品', 'Accessory')];
     const s = stats(m);
@@ -119,7 +143,8 @@ async function equipMenu() {
     const opts = Object.keys(S.inv).filter((id) => ITEMS[id] && ITEMS[id].type === sl && (sl !== 'weapon' || ITEMS[id].for === HEROES[m.id].weapon));
     const list = [...opts, ...(sl === 'acc' && m.equip.acc ? [null] : [])];
     if (!list.length) { sfx('buzz'); continue; }
-    const j = await menu(list.map((id) => ({ label: id ? ITEMS[id].name : L('（卸下）', '(remove)'), right: id ? count(id) : '' })), { x: 170, y: 90, w: 260, maxRows: 8, drawExtra: (i) => { const id = list[i]; if (!id) return; const old = m.equip[sl]; m.equip[sl] = id; const n = stats(m); m.equip[sl] = old; desc(`${L('攻', 'Atk')} ${s.atk}→${n.atk}  ${L('防', 'Def')} ${s.def}→${n.def}  ${L('魔', 'Mag')} ${s.mag}→${n.mag}  ${L('速', 'Spd')} ${s.spd}→${n.spd}`); if (sl === 'acc' && ITEMS[id].desc) { windowBox(150, H - 82, W - 154, 34); text(fit(ITEMS[id].desc, W - 174), 160, H - 73, '#ffe8a0'); } } });
+    const j = await menu(list.map((id) => ({ label: id ? ITEMS[id].name : L('（卸下）', '(remove)'), right: id ? count(id) : '' })), { x: 170, y: 90, w: 260, maxRows: 8, drawExtra: (i) => { const id = list[i]; tryOn({ ...m.equip, [sl]: id }); if (!id) return; const old = m.equip[sl]; m.equip[sl] = id; const n = stats(m); m.equip[sl] = old; desc(`${L('攻', 'Atk')} ${s.atk}→${n.atk}  ${L('防', 'Def')} ${s.def}→${n.def}  ${L('魔', 'Mag')} ${s.mag}→${n.mag}  ${L('速', 'Spd')} ${s.spd}→${n.spd}`); if (sl === 'acc' && ITEMS[id].desc) { windowBox(150, H - 82, W - 154, 34); text(fit(ITEMS[id].desc, W - 174), 160, H - 73, '#ffe8a0'); } } });
+    tryOn(null);
     if (j < 0) continue;
     const id = list[j];
     if (m.equip[sl]) addItem(m.equip[sl], 1);

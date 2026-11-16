@@ -15,6 +15,7 @@ import './story2.js';
 import { fieldMenu, shopMenu } from './menu.js';
 import { MONSTERS } from './data.js';
 import { T } from './gfx.js';
+import { dress, dressed } from './doll.js';
 
 let mode = 'title', busy = false, fadeA = 1, fadeGoal = 0, label = null, caption = null, fleeT = 0;
 const overlays = [];
@@ -117,8 +118,8 @@ async function titleScreen() {
     const k = await menu(opts.map((o) => (typeof o === 'string' ? { label: o } : o)), { x: W / 2 - (carry ? 120 : 70), y: carry ? 186 : 200, w: carry ? 240 : 140, cancel: false, start: has ? 1 : 0 });
     initAudio();
     if (k === 2) { setLang(LANG === 'en' ? 'zh' : 'en'); continue; }
-    if (k === 0 || k === 3) { await fadeTo(1); reset(k === 3 ? carry : null); F.camTarget = null; mode = 'game'; F.beatenHere = new Set(); enterMap('workshop', 6.5, 6.2, 'u'); playMusic('home'); await runScript('intro'); if (fadeA > 0) await fadeTo(0); return; }
-    if (k === 1 && load()) { await fadeTo(1); F.camTarget = null; mode = 'game'; F.beatenHere = new Set(); enterMap(S.map, S.x / T, S.y / T, S.dir); playMusic(mapMusic()); label = mapLabel(mapName(MAPS[S.map])); await fadeTo(0); return; }
+    if (k === 0 || k === 3) { await fadeTo(1); reset(k === 3 ? carry : null); F.camTarget = null; mode = 'game'; F.beatenHere = new Set(); enterMap('workshop', 6.5, 6.2, 'u'); await dressed(S.members); playMusic('home'); await runScript('intro'); if (fadeA > 0) await fadeTo(0); return; }
+    if (k === 1 && load()) { await fadeTo(1); F.camTarget = null; mode = 'game'; F.beatenHere = new Set(); enterMap(S.map, S.x / T, S.y / T, S.dir); await dressed(S.members); playMusic(mapMusic()); label = mapLabel(mapName(MAPS[S.map])); await fadeTo(0); return; }
   }
 }
 async function gameOver() {
@@ -254,6 +255,8 @@ function frame() {
   pollInput(); uiTick();
   if (mode === 'title') { fieldUpdate(false); drawTitle(); UI.draw(); if (UI.active) UI.update(); }
   else if (mode === 'game') {
+    // the paper doll: whatever anyone has just put on shows on them
+    dress(S.members);
     const free = !UI.active && !busy && !inBattle() && !caption && fadeA < 0.05;
     fieldUpdate(free && !inBattle());
     battleUpdate();
@@ -279,6 +282,6 @@ function frame() {
 setupTouch();
 addEventListener('keydown', () => initAudio(), { once: false });
 addEventListener('pointerdown', () => initAudio());
-window.G = { addItem, save, endingsSeen, setMode: (m) => { mode = m; UI.clear(); fadeA = 0; }, uiActive: () => UI.active || !!caption || fadeA > 0.05, fullHeal, S, F, warp, runScript, fight, MAPS, startBattle, get mode() { return mode; }, get busy() { return busy; }, MONSTERS, addMember, refreshParty, enterMap };
+window.G = { addItem, save, endingsSeen, setMode: (m) => { mode = m; UI.clear(); fadeA = 0; }, uiActive: () => UI.active || !!caption || fadeA > 0.05, fullHeal, S, F, warp, runScript, fight, MAPS, startBattle, get mode() { return mode; }, get busy() { return busy; }, MONSTERS, addMember, refreshParty, enterMap, dressed };
 titleScreen();
 requestAnimationFrame(frame);

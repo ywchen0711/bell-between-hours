@@ -1,6 +1,6 @@
 // The party, the inventory, gold, story flags and saving.
-import { HEROES, LEARN, TECHS, ITEMS, expFor } from './data.js?v=7';
-import { L } from './i18n.js?v=7';
+import { HEROES, LEARN, TECHS, ITEMS, expFor } from './data.js?v=8';
+import { L } from './i18n.js?v=8';
 
 export const S = {
   members: [], active: [], inv: {}, gold: 0, flags: {}, map: 'workshop', x: 0, y: 0, dir: 'd', time: 0, beaten: {}, opened: {},

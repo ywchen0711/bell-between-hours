@@ -3,18 +3,18 @@
 // game waits while you choose. Techniques reach different shapes of ground: one foe, a line from the
 // user through the target, a circle round the target or round the user, or everyone. Two or three
 // friends whose gauges are all full can combine their techniques.
-import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js?v=7';
-import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js?v=7';
-import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js?v=7';
-import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js?v=7';
-import { input } from './input.js?v=7';
-import { sfx, playMusic, currentSong } from './audio.js?v=7';
-import { L } from './i18n.js?v=7';
-import { UI, menu, pressKey, statusTags, drawTags, wrap, fit, abortUI } from './ui.js?v=7';
-import { T as TAC, isAuto, decide, cycleMode, modeName, condName, actName, knownMul, rulesOf } from './tactics.js?v=7';
-import { heroTactics } from './tacmenu.js?v=7';
-import { lastDevice } from './input.js?v=7';
-import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js?v=7';
+import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js?v=8';
+import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js?v=8';
+import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js?v=8';
+import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js?v=8';
+import { input } from './input.js?v=8';
+import { sfx, playMusic, currentSong } from './audio.js?v=8';
+import { L } from './i18n.js?v=8';
+import { UI, menu, pressKey, statusTags, drawTags, wrap, fit, abortUI } from './ui.js?v=8';
+import { T as TAC, isAuto, decide, cycleMode, modeName, condName, actName, knownMul, rulesOf } from './tactics.js?v=8';
+import { heroTactics } from './tacmenu.js?v=8';
+import { lastDevice } from './input.js?v=8';
+import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js?v=8';
 
 let B = null;
 export const inBattle = () => !!B;
@@ -400,7 +400,7 @@ function combosFor(p) {
   }
   return out;
 }
-import { LEARN } from './data.js?v=7';
+import { LEARN } from './data.js?v=8';
 const TECHS_BY_INDEX = (id, i) => LEARN[id][i];
 const mpCost = (p, n) => (hasFx(p.h, 'halfmp') ? Math.ceil(n / 2) : n);
 
@@ -536,11 +536,11 @@ async function ordersMenu(p) {
     const t = TAC();
     const rows = [
       { label: L('模式', 'Mode'), right: modeName(t.mode) },
-      { label: L('自動兩倍速', 'Fast auto'), right: t.fast ? L('開', 'On') : L('關', 'Off') },
+      { label: L('兩倍速', 'Double speed'), right: t.fast ? L('開', 'On') : L('關', 'Off') },
       { label: L('這回合照作戰', 'Use orders now') },
       { label: L('編輯作戰…', 'Edit orders…') },
     ];
-    const help = [L('手動／作戰／混合輪流切換（T 鍵、手把 X 也可以）。', 'Cycle Manual / Orders / Mixed (or T, pad X).'), L('照作戰行動時動作加快一倍（F 鍵、手把 Select）。', 'Battles on orders play twice as fast (or F, pad Select).'), L(`這一次讓${nameOf(p.h)}照作戰行動，模式不變。`, `Let ${nameOf(p.h)} act by orders this once; the mode stays.`), L(`看看、改改${nameOf(p.h)}的作戰。戰鬥會等你。`, `View and change ${nameOf(p.h)}'s orders. The battle waits.`)];
+    const help = [L('手動／作戰／混合輪流切換（T 鍵、手把 X 也可以）。', 'Cycle Manual / Orders / Mixed (or T, pad X).'), L('戰鬥動作加快一倍，手動模式也可以（F 鍵、手把 Select）。', 'Battles play twice as fast, in any mode (or F, pad Select).'), L(`這一次讓${nameOf(p.h)}照作戰行動，模式不變。`, `Let ${nameOf(p.h)} act by orders this once; the mode stays.`), L(`看看、改改${nameOf(p.h)}的作戰。戰鬥會等你。`, `View and change ${nameOf(p.h)}'s orders. The battle waits.`)];
     const k = await menu(rows, { x: W - 236, y: H - 76 - 6 * 16, w: 210, title: L('作戰', 'Orders'), drawExtra: (i) => descLine(help[i]) });
     if (k < 0) return null;
     if (k === 0) { cycleMode(); sfx('ok'); showNote(modeNote()); touchButtons(true); if (isAuto(p.h)) return null; continue; }
@@ -594,7 +594,7 @@ function pickFrom(list, p, t, who, all = false) {
 }
 function UI_PUSH(w) { return new Promise((res) => { w.done = (v) => { UI_STACK_REMOVE(w); res(v); }; UI_STACK_ADD(w); }); }
 // the dialogue stack lives in ui.js; this little hook puts a target picker on it
-import { pushRaw, removeRaw } from './ui.js?v=7';
+import { pushRaw, removeRaw } from './ui.js?v=8';
 const UI_STACK_ADD = (w) => pushRaw(w), UI_STACK_REMOVE = (w) => removeRaw(w);
 
 // ---------- doing things ----------
@@ -926,8 +926,9 @@ async function flee() {
 }
 
 // ---------- one frame ----------
-// fast auto: twice as fast while friends act by orders and no window is open
-const pace = () => (B && TAC().fast && TAC().mode !== 'manual' && !UI.active && !B.victory ? 2 : 1);
+// battles play half again as fast as walking time; the fast switch doubles that (any mode) while no window is open
+const BASE_PACE = 1.5;
+const pace = () => (!B || UI.active ? 1 : BASE_PACE * (TAC().fast && !B.victory ? 2 : 1));
 function step(extra) {
   for (const e of B.heroes) {
     tickReact(e);
@@ -950,17 +951,20 @@ function ordersKeys() {
     cycleMode(); sfx('ok'); showNote(modeNote()); touchButtons(true);
     // the friend whose menu is open now acts by orders: close the menu
     if (B.cmdFor && isAuto(B.cmdFor.h)) abortUI();
-  } else if (input.pressed('fast') && !B.editing) { t.fast = !t.fast; sfx('cursor'); showNote(t.fast ? L('自動戰鬥兩倍速', 'Orders at double speed') : L('一般速度', 'Normal speed')); touchButtons(true); }
+  } else if (input.pressed('fast') && !B.editing) { t.fast = !t.fast; sfx('cursor'); showNote(t.fast ? L('戰鬥兩倍速', 'Double speed') : L('一般速度', 'Normal speed')); touchButtons(true); }
   else if (!UI.active && t.mode !== 'manual' && input.pressed('b')) { t.mode = 'manual'; sfx('cancel'); showNote(L('改回手動：下一位起由你下指令', 'Manual: you choose from the next turn')); touchButtons(true); }
 }
 export function battleUpdate() {
   if (!B) return;
   ordersKeys();
   step(false);
-  if (pace() > 1) {
-    // let the awaited code run on before the second step (promise callbacks queue up behind each other)
+  B.paceAcc = (B.paceAcc || 0) + pace() - 1;
+  let more = Math.floor(B.paceAcc);
+  B.paceAcc -= more;
+  if (more > 0) {
+    // let the awaited code run on before each extra step (promise callbacks queue up behind each other)
     let k = 0;
-    const hop = () => { if (++k < 12) Promise.resolve().then(hop); else if (B) step(true); };
+    const hop = () => { if (!B) return; if (++k < 12) { Promise.resolve().then(hop); return; } step(true); k = 0; if (--more > 0) Promise.resolve().then(hop); };
     Promise.resolve().then(hop);
   }
 }
@@ -1025,7 +1029,7 @@ function drawOrders() {
   // (on a touch screen the buttons at the top left show it instead)
   if (!B.victory && lastDevice !== 'touch') {
     const key = lastDevice === 'pad' ? 'X' : lastDevice === 'touch' ? '' : 'T';
-    const s = (key ? L(key + ' 鍵：', key + ': ') : '') + modeName(t.mode) + (t.mode !== 'manual' && t.fast ? ' ×2' : ''), w = textW(s) + 14;
+    const s = (key ? L(key + ' 鍵：', key + ': ') : '') + modeName(t.mode) + (t.fast ? ' ×2' : ''), w = textW(s) + 14;
     ctx.globalAlpha = t.mode === 'manual' ? 0.6 : 1;
     windowBox(4, 4, w, 22, { alpha: 0.8 }); text(s, 10, 9, t.mode === 'manual' ? '#a0a8c8' : '#ffe8a0');
     ctx.globalAlpha = 1;

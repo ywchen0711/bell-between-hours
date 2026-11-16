@@ -1,14 +1,14 @@
 // The battle orders menu: the mode, double speed, and each friend's list of orders (pick a condition and an
 // action, switch an order off, move it, delete it, use a ready-made set, copy a friend's). Reached from the
 // field menu and from the Orders command in battle.
-import { ctx, W, H, text, textW, windowBox } from './gfx.js?v=7';
-import { menu, notice, wrap, fit, pushRaw, removeRaw } from './ui.js?v=7';
-import { input } from './input.js?v=7';
-import { sfx } from './audio.js?v=7';
-import { L } from './i18n.js?v=7';
-import { S, nameOf, techsOf } from './party.js?v=7';
-import { TECHS, COMBOS } from './data.js?v=7';
-import { T, rulesOf, maxSlots, SLOT_STEPS, MODES, modeName, modeDesc, COND, ACT, ACT_ORDER, GROUPS, GROUP_COL, PRESETS, presetRules, suggested, condName, condDesc, actName, actDesc, kindReady, techChoices, comboChoices } from './tactics.js?v=7';
+import { ctx, W, H, text, textW, windowBox } from './gfx.js?v=8';
+import { menu, notice, wrap, fit, pushRaw, removeRaw } from './ui.js?v=8';
+import { input } from './input.js?v=8';
+import { sfx } from './audio.js?v=8';
+import { L } from './i18n.js?v=8';
+import { S, nameOf, techsOf } from './party.js?v=8';
+import { TECHS, COMBOS } from './data.js?v=8';
+import { T, rulesOf, maxSlots, SLOT_STEPS, MODES, modeName, modeDesc, COND, ACT, ACT_ORDER, GROUPS, GROUP_COL, PRESETS, presetRules, suggested, condName, condDesc, actName, actDesc, kindReady, techChoices, comboChoices } from './tactics.js?v=8';
 
 const onOff = (v) => (v ? L('開', 'On') : L('關', 'Off'));
 const GREY = '#8088a8';
@@ -32,7 +32,7 @@ export async function tacticsMenu() {
   let at = 0;
   for (;;) {
     const t = T(), n = maxSlots();
-    const rows = [{ label: L('戰鬥模式', 'Battle mode'), right: modeName(t.mode), rcolor: t.mode === 'manual' ? null : '#ffe8a0' }, { label: L('自動兩倍速', 'Fast auto'), right: onOff(t.fast) },
+    const rows = [{ label: L('戰鬥模式', 'Battle mode'), right: modeName(t.mode), rcolor: t.mode === 'manual' ? null : '#ffe8a0' }, { label: L('兩倍速', 'Double speed'), right: onOff(t.fast) },
       ...S.members.map((m) => ({ label: nameOf(m), right: `${t.per[m.id] === 'auto' ? L('作戰', 'Auto') : L('手動', 'Hand')} ${rulesOf(m).length}/${n}` })),
       { label: L('說明', 'How it works'), color: '#a0e0ff' }];
     const k = await menu(rows, { x: 4, y: 4, w: 222, start: at, maxRows: 12, title: L('作戰', 'Tactics'), drawExtra: (i) => frontInfo(i, rows.length) });
@@ -47,7 +47,7 @@ export async function tacticsMenu() {
 function frontInfo(i, nRows) {
   const t = T(), x = 230, w = W - 234;
   if (i === 0) return infoBox([[L('戰鬥模式', 'Battle mode'), '#f8e070'], ...MODES.flatMap((md) => [[`${md === t.mode ? '▶ ' : '　'}${modeName(md)}`, md === t.mode ? '#ffe8a0' : '#c0c8e0'], [modeDesc(md), '#d0d4e8']]), [L('戰鬥中按 T（手把 X、觸控的「作戰」鈕）隨時切換。', 'In battle press T (pad X, or the touch button) to switch any time.'), '#a0e0ff']], x, 4, w, H - 8);
-  if (i === 1) return infoBox([[L('自動兩倍速', 'Fast auto'), '#f8e070'], [L('作戰或混合模式時，戰鬥的動作快一倍。由你下指令的時候照常。', 'In Orders or Mixed mode battles play twice as fast. Your own turns are as usual.')], [L('戰鬥中按 F（手把 Select）也能切換。', 'Press F (pad Select) in battle to switch it too.'), '#a0e0ff']], x, 4, w, H - 8);
+  if (i === 1) return infoBox([[L('兩倍速', 'Double speed'), '#f8e070'], [L('戰鬥的動作再快一倍，手動模式也有效。選指令的時候戰鬥會等你。', 'Battles play twice as fast again, in any mode. The battle still waits while you choose.')], [L('戰鬥中按 F（手把 Select）也能切換。', 'Press F (pad Select) in battle to switch it too.'), '#a0e0ff']], x, 4, w, H - 8);
   if (i === nRows - 1) return infoBox([[L('說明', 'How it works'), '#f8e070'], [L('作戰是一串「條件 → 行動」。行動條滿的時候從第一條往下看，第一條條件成立、又做得到的就做；都不合就普通攻擊。', 'Orders are a list of CONDITION → ACTION. When the gauge fills, the list is read from the top: the first order that holds and can be done is done; if none, a plain attack.')], [L('按 A 看完整的說明。', 'Press A for the full guide.'), '#a0e0ff']], x, 4, w, H - 8);
   const m = S.members[i - 2]; if (!m) return;
   infoBox([[nameOf(m), '#f8e070'], [L('混合模式時：', 'In Mixed mode: ') + (T().per[m.id] === 'auto' ? L('照作戰', 'by orders') : L('由你操作', 'by hand')), '#c0c8e0'], ...ruleLines(m, maxSlots())], x, 4, w, H - 8);

@@ -1,15 +1,15 @@
 // Dialogue boxes, choices and list menus. Each returns a promise, so story scripts can be
 // written as plain async code; the main loop feeds them input and draws them on top.
-import { ctx, W, H, text, textW, windowBox, HAND, HAND_D } from './gfx.js?v=6';
-import { input } from './input.js?v=6';
-import { sfx } from './audio.js?v=6';
-import { speaker, L } from './i18n.js?v=6';
+import { ctx, W, H, text, textW, windowBox, HAND, HAND_D } from './gfx.js?v=7';
+import { input } from './input.js?v=7';
+import { sfx } from './audio.js?v=7';
+import { speaker, L } from './i18n.js?v=7';
 
 // short coloured status tags so the panels show who is poisoned, slowed, shielded... at a glance
 const STTAG = {
   poison: ['毒', 'PSN', '#c080ff'], slow: ['緩', 'SLW', '#c0a0ff'], haste: ['速', 'HST', '#80e0ff'], barrier: ['盾', 'SHD', '#a0c8ff'],
   regen: ['再生', 'RGN', '#90ffb0'], brk: ['防↓', 'DEF↓', '#ff9070'], stun: ['麻', 'STN', '#ffff80'], freeze: ['凍', 'FRZ', '#c0f0ff'],
-  iced: ['冰甲', 'ICE', '#a0e8ff'],
+  iced: ['冰甲', 'ICE', '#a0e8ff'], guard: ['守', 'GRD', '#a0c8ff'],
 };
 const BUFTAG = { pow: ['攻↑', 'ATK↑', '#ffb070'], def: ['防↑', 'DEF↑', '#ffd870'], spd: ['速↑', 'SPD↑', '#80f0ff'] };
 // status: the statuses object; buff: optional multipliers ({ pow: 1.35 })
@@ -46,6 +46,8 @@ export function uiTick() { frame++; }
 // a raw window (battle target pickers) put on the stack and taken off again
 export function pushRaw(w) { stack.push(w); }
 export function removeRaw(w) { const i = stack.indexOf(w); if (i >= 0) stack.splice(i, 1); }
+// close every window, each answering -1 (a battle menu whose friend has just been put on orders)
+export function abortUI() { while (stack.length) { const w = stack[stack.length - 1]; if (w.done) w.done(-1); if (stack[stack.length - 1] === w) stack.pop(); } }
 function push(w) { stack.push(w); return new Promise((res) => { w.done = (v) => { const i = stack.indexOf(w); if (i >= 0) stack.splice(i, 1); res(v); }; }); }
 
 // wrap text to a pixel width; \n forces a break
@@ -118,7 +120,7 @@ export function fit(s, w) {
 
 // ---------- list menus ----------
 // items: [{ label, right, disabled, color }] or strings
-export function menu(items, { x = 150, y = 60, w, cols = 1, cancel = true, title, start = 0, onMove, rowH = 16, maxRows = 9, drawExtra } = {}) {
+export function menu(items, { x = 150, y = 60, w, cols = 1, cancel = true, title, start = 0, onMove, rowH = 16, maxRows = 9, drawExtra, keys } = {}) {
   items = items.map((it) => (typeof it === 'string' ? { label: it } : it));
   // a window sized to its contents never grows past the screen
   const colW = w ? Math.floor((w - 20) / cols) : Math.min(Math.floor((W - 30) / cols), Math.max(...items.map((it) => textW(it.label) + (it.right ? textW(String(it.right)) + 14 : 0))) + 8);
@@ -140,6 +142,8 @@ export function menu(items, { x = 150, y = 60, w, cols = 1, cancel = true, title
       const r = Math.floor(this.i / cols);
       if (r < this.scroll) this.scroll = r;
       if (r >= this.scroll + vis) this.scroll = r - vis + 1;
+      // extra keys a caller can listen for (left/right to change a value in place)
+      if (keys) for (const k of Object.keys(keys)) if (input.repeat(k) || input.pressed(k)) { if (keys[k](this.i) !== false) { this.done({ key: k, i: this.i }); return; } }
       if (input.pressed('a')) {
         if (items[this.i].disabled) { sfx('buzz'); return; }
         sfx('ok'); this.done(this.i);
@@ -154,7 +158,7 @@ export function menu(items, { x = 150, y = 60, w, cols = 1, cancel = true, title
         // a long name is shortened with "…" rather than running into the number on its right
         const rs = it.right !== undefined ? String(it.right) : '';
         text(fit(it.label, colW - 6 - (rs ? textW(rs) + 6 : 0)), cx, cy, it.disabled ? '#8088a8' : it.color || '#f8f8f8');
-        if (rs) text(rs, cx + colW - 6, cy, it.disabled ? '#8088a8' : '#f8f8f8', { align: 'right' });
+        if (rs) text(rs, cx + colW - 6, cy, it.disabled ? '#8088a8' : it.rcolor || '#f8f8f8', { align: 'right' });
       }
       // the more-above / more-below arrows sit on the window's frame, clear of the numbers in the right column
       if (this.scroll > 0 && (frame >> 3) % 2) text('▲', x + w / 2, y - 5, '#f8e070', { align: 'center' });

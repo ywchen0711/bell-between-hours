@@ -1,7 +1,7 @@
 // The story, written as plain async scripts. Every line is in both languages: T('中文', 'English').
-import { L } from './i18n.js?v=6';
-import { S, addItem, member, fullHeal } from './party.js?v=6';
-import { ITEMS, SHOPS } from './data.js?v=6';
+import { L } from './i18n.js?v=7';
+import { S, addItem, member, fullHeal } from './party.js?v=7';
+import { ITEMS, SHOPS } from './data.js?v=7';
 
 const T = (zh, en) => L(zh, en);
 export const SCRIPTS = {};

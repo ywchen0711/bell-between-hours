@@ -20,6 +20,11 @@
   .btn.a { right: max(18px, env(safe-area-inset-right)); bottom: 64px; }
   .btn.b { right: calc(max(18px, env(safe-area-inset-right)) + 70px); bottom: 18px; background: rgba(40,60,130,0.6); border-color: rgba(130,160,240,0.75); }
   .btn.m { right: calc(max(18px, env(safe-area-inset-right)) + 56px); top: 10px; bottom: auto; width: 56px; height: 30px; border-radius: 15px; font-size: 14px; background: rgba(40,40,60,0.6); border-color: rgba(160,160,190,0.7); }
+  /* battle orders: shown on touch screens while a battle is on */
+  .btn.t { display: none; left: max(14px, env(safe-area-inset-left)); top: 10px; bottom: auto; width: 64px; height: 30px; border-radius: 15px; font-size: 14px; background: rgba(40,40,60,0.6); border-color: rgba(160,160,190,0.7); }
+  .btn.t.f { left: calc(max(14px, env(safe-area-inset-left)) + 72px); width: 44px; }
+  .btn.t.lit { background: rgba(150,100,30,0.7); border-color: rgba(240,210,130,0.85); }
+  body.inbattle .btn.t { display: flex; }
   #musicBtn { position: fixed; top: 8px; right: 8px; z-index: 20; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.45); background: rgba(20,24,48,0.6); color: #fff; font: 20px sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   #musicBtn.off { opacity: 0.6; }
   #musicBtn.off::after { content: ''; position: absolute; width: 30px; height: 3px; background: #ff6070; transform: rotate(-45deg); border-radius: 2px; }
@@ -33,6 +38,8 @@
   <div class="btn b" data-k="b">B</div>
   <div class="btn a" data-k="a">A</div>
   <div class="btn m" data-k="menu" id="menuBtn">選單</div>
+  <div class="btn t" data-k="tac" id="tacBtn">手動</div>
+  <div class="btn t f" data-k="fast" id="fastBtn">×1</div>
 </div>
 <script>
   // The 480x320 picture fills the window. Inside, the canvas holds a whole number of real pixels per game
@@ -49,6 +56,6 @@
   addEventListener('resize', fit);
   fit();
 </script>
-<script type="module" src="js/main.js?v=6"></script>
+<script type="module" src="js/main.js?v=7"></script>
 </body>
 </html>

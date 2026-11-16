@@ -1,6 +1,6 @@
 // The party, the inventory, gold, story flags and saving.
-import { HEROES, LEARN, TECHS, ITEMS, expFor } from './data.js?v=6';
-import { L } from './i18n.js?v=6';
+import { HEROES, LEARN, TECHS, ITEMS, expFor } from './data.js?v=7';
+import { L } from './i18n.js?v=7';
 
 export const S = {
   members: [], active: [], inv: {}, gold: 0, flags: {}, map: 'workshop', x: 0, y: 0, dir: 'd', time: 0, beaten: {}, opened: {},
@@ -75,11 +75,12 @@ export function saveInfo(slot = 0) { try { return JSON.parse(localStorage.getIte
 export function load(slot = 0) {
   const d = saveInfo(slot);
   if (!d) return false;
-  Object.assign(S, { members: [], active: [], inv: {}, flags: {}, beaten: {}, opened: {}, dex: {}, seen: {}, tokens: 0, fish: {}, carry: null }, d);
+  // a save from before the battle orders has none: they start in Manual
+  Object.assign(S, { members: [], active: [], inv: {}, flags: {}, beaten: {}, opened: {}, dex: {}, seen: {}, tokens: 0, fish: {}, carry: null, tactics: null }, d);
   return true;
 }
 export function reset(carry = null) {
-  Object.assign(S, { members: [], active: [], inv: { tonic: 3 }, gold: 60, flags: {}, map: 'workshop', x: 5 * 32 + 16, y: 5 * 32 + 16, dir: 'd', time: 0, beaten: {}, opened: {}, dex: {}, seen: {}, tokens: 0, fish: {}, carry });
+  Object.assign(S, { members: [], active: [], inv: { tonic: 3 }, gold: 60, flags: {}, map: 'workshop', x: 5 * 32 + 16, y: 5 * 32 + 16, dir: 'd', time: 0, beaten: {}, opened: {}, dex: {}, seen: {}, tokens: 0, fish: {}, carry, tactics: null });
   if (carry) {
     // New Game+: keep the gold, the bag (but not the story's keys) and the monster book
     S.gold = carry.gold; S.inv = { ...carry.inv }; S.dex = { ...(carry.dex || {}) }; S.seen = { ...(carry.seen || {}) }; S.flags.ngplus = (carry.round || 1);

@@ -1,12 +1,12 @@
 // The expansion's story: the Hush was only a shadow. Its heart sleeps past the end of time, held by three
 // anchors in three more eras. Every line is in both languages, as in story.js.
-import { L } from './i18n.js?v=6';
-import { S, addItem, member, count } from './party.js?v=6';
-import { ITEMS } from './data.js?v=6';
-import { SCRIPTS } from './story.js?v=6';
-import { forgeMenu, bestiary, fishing, strengthBell, beetleRace, prizeBooth, fishTrade, dexCount, paradoxCount } from './systems.js?v=6';
-import { shopMenu } from './menu.js?v=6';
-import { SHOPS } from './data.js?v=6';
+import { L } from './i18n.js?v=7';
+import { S, addItem, member, count } from './party.js?v=7';
+import { ITEMS } from './data.js?v=7';
+import { SCRIPTS } from './story.js?v=7';
+import { forgeMenu, bestiary, fishing, strengthBell, beetleRace, prizeBooth, fishTrade, dexCount, paradoxCount } from './systems.js?v=7';
+import { shopMenu } from './menu.js?v=7';
+import { SHOPS } from './data.js?v=7';
 
 const T = (zh, en) => L(zh, en);
 const def = (name, f) => { SCRIPTS[name] = f; };

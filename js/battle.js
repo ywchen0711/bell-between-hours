@@ -3,15 +3,18 @@
 // game waits while you choose. Techniques reach different shapes of ground: one foe, a line from the
 // user through the target, a circle round the target or round the user, or everyone. Two or three
 // friends whose gauges are all full can combine their techniques.
-import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js?v=6';
-import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js?v=6';
-import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js?v=6';
-import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js?v=6';
-import { input } from './input.js?v=6';
-import { sfx, playMusic, currentSong } from './audio.js?v=6';
-import { L } from './i18n.js?v=6';
-import { UI, menu, pressKey, statusTags, drawTags, wrap } from './ui.js?v=6';
-import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js?v=6';
+import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js?v=7';
+import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js?v=7';
+import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js?v=7';
+import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js?v=7';
+import { input } from './input.js?v=7';
+import { sfx, playMusic, currentSong } from './audio.js?v=7';
+import { L } from './i18n.js?v=7';
+import { UI, menu, pressKey, statusTags, drawTags, wrap, fit, abortUI } from './ui.js?v=7';
+import { T as TAC, isAuto, decide, cycleMode, modeName, condName, actName, knownMul, rulesOf } from './tactics.js?v=7';
+import { heroTactics } from './tacmenu.js?v=7';
+import { lastDevice } from './input.js?v=7';
+import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js?v=7';
 
 let B = null;
 export const inBattle = () => !!B;
@@ -196,7 +199,7 @@ function heroDamage(src, tgt, t, part = 1) {
 function foeDamage(f, p, mv) {
   const hs = heroStats(p);
   let base = mv.kind === 'phys' ? foeStat(f, 'pow') * 1.6 * mv.pow - hs.def * 0.6 : foeStat(f, 'mag') * 1.6 * mv.pow - hs.mdf * 0.5;
-  if (p.guard) base *= 0.6;
+  if (p.guard || p.h.status.guard) base *= 0.5;
   if (p.h.status.barrier) base *= 0.6;
   base *= elemMul(p, mv.el);
   return Math.max(1, Math.round(Math.max(1, base) * rand(0.9, 1.1)));
@@ -206,6 +209,9 @@ function hurtFoe(f, d, crit, el) {
   if (f.status.iced && el === 'fire') { delete f.status.iced; popNum({ x: f.x, y: f.y - 28, ht: f.ht }, L('冰甲融化了！', 'Ice armour melts!'), '#ffb060'); }
   if (f.charging && el === 'bolt') { f.charging = false; f.status.stun = true; popNum({ x: f.x, y: f.y - 28, ht: f.ht }, L('發條被電斷了！', 'The spring snaps!'), '#ffff80'); } sfx(crit ? 'crit' : el === 'fire' ? 'fire' : el === 'bolt' ? 'bolt' : 'hit');
   popNum(f, String(d), crit ? '#ffe060' : elemMul(f, el) > 1 ? '#ffb060' : elemMul(f, el) < 1 ? '#a0a8c0' : '#ffffff');
+  // what a hit showed is remembered for the battle orders
+  if (el && elemMul(f, el) > 1 && !(f.seenWeak ||= []).includes(el)) f.seenWeak.push(el);
+  if (el && elemMul(f, el) < 1 && !(f.seenRes ||= []).includes(el)) f.seenRes.push(el);
   if (elemMul(f, el) > 1) popNum({ x: f.x, y: f.y - 14, ht: f.ht }, L('弱點！', 'Weak!'), '#ffd060');
   hitReact(f);
 }
@@ -257,12 +263,13 @@ export function startBattle(group, opts = {}) {
   return new Promise((resolve) => {
     const foes = F.foes.filter((f) => f.group === group);
     const prevSong = currentSong;
-    B = { group, foes, heroes: F.party.slice(), waiters: [], resolve, over: false, boss: !!group.boss, target: null, cmdFor: null, prevSong, noFlee: !!group.boss || opts.noFlee, log: '' };
+    B = { group, foes, heroes: F.party.slice(), waiters: [], resolve, over: false, boss: !!group.boss, target: null, cmdFor: null, prevSong, noFlee: !!group.boss || opts.noFlee, log: '', clock: 0, leaderTarget: null, note: null, editing: false };
     F.battle = B;
     for (const f of foes) initFoe(f);
     for (const p of B.heroes) {
       Object.assign(p, { gauge: p.h.hp > 0 ? rand(20, 70) : 0, buff: {}, guard: false, ht: 56, anim: p.h.hp > 0 ? 'walk' : 'hurt', frame: p.h.hp > 0 ? 0 : 5 });
-      for (const k of ['haste', 'slow', 'barrier', 'regen']) delete p.h.status[k];
+      for (const k of ['haste', 'slow', 'barrier', 'regen', 'guard']) delete p.h.status[k];
+      Object.assign(p, { hold: null, started: false, noHold: false, turns: 0, tacLabel: null });
       if (p.h.hp > 0 && hasFx(p.h, 'haste')) p.h.status.haste = 4;
       if (p.h.hp > 0 && hasFx(p.h, 'first')) p.gauge = 100;
     }
@@ -271,6 +278,7 @@ export function startBattle(group, opts = {}) {
     const lead = foes[0] && foes[0].m;
     if (!opts.keepMusic) playMusic(group.boss ? (lead.music || (group.list[0] === 'hush' ? 'lastboss' : 'boss')) : (F.map.battleMusic || 'battle'));
     sfx('encounter');
+    touchButtons(true);
     run();
   });
 }
@@ -328,6 +336,7 @@ async function run() {
   await placeParty();
   while (!B.over) {
     await wait(1);
+    B.clock++;
     if (!liveFoes().length) { await victory(); return; }
     if (!liveHeroes().length) { await defeat(); return; }
     // gauges
@@ -349,14 +358,21 @@ async function run() {
       continue;
     }
     if (ready.length) {
-      const p = ready[0];
-      tickTimed(p.h.status);
-      // poison bites at the start of a turn; regeneration heals
-      if (p.h.status.poison) { const d = Math.max(1, Math.round(stats(p.h).maxhp * 0.06)); hurtHero(p, d); await wait(16); if (p.h.hp <= 0) continue; }
-      if (p.h.status.regen || hasFx(p.h, 'regen')) { heal(p, Math.max(1, Math.round(stats(p.h).maxhp * 0.06))); await wait(10); }
-      if (p.h.status.stun || p.h.status.freeze) { const w = p.h.status.freeze ? L('凍結', 'Frozen') : L('麻痺', 'Stunned'); delete p.h.status.stun; delete p.h.status.freeze; p.gauge = 0; popNum(p, w, '#ffff80'); await wait(20); continue; }
+      // a friend holding a combo for their partners waits (and the partners with them) until it can go
+      const p = pickReady(ready);
+      if (!p) continue;
+      // the start of a turn happens once, even if the friend then waits a little for a combo
+      if (!p.started) {
+        p.started = true; delete p.h.status.guard;
+        tickTimed(p.h.status);
+        // poison bites at the start of a turn; regeneration heals
+        if (p.h.status.poison) { const d = Math.max(1, Math.round(stats(p.h).maxhp * 0.06)); hurtHero(p, d); await wait(16); if (p.h.hp <= 0) { p.started = false; continue; } }
+        if (p.h.status.regen || hasFx(p.h, 'regen')) { heal(p, Math.max(1, Math.round(stats(p.h).maxhp * 0.06))); await wait(10); }
+        if (p.h.status.stun || p.h.status.freeze) { const w = p.h.status.freeze ? L('凍結', 'Frozen') : L('麻痺', 'Stunned'); delete p.h.status.stun; delete p.h.status.freeze; p.gauge = 0; p.started = false; p.turns++; popNum(p, w, '#ffff80'); await wait(20); continue; }
+      }
       const done = await heroTurn(p);
       if (done === 'fled') return;
+      if (done !== 'hold') { p.started = false; p.noHold = false; p.turns++; }
     }
   }
 }
@@ -372,33 +388,38 @@ function combosFor(p) {
       const ok = B.heroes.every((q) => q.h.hp > 0 && knows(q.h, q.id === 'ren' ? 'riftdash' : TECHS_BY_INDEX(q.id, 2)));
       const allReady = B.heroes.every((q) => q.gauge >= 100);
       const mpOk = B.heroes.every((q) => q.h.mp >= 8);
-      if (ok) out.push({ id, c, who: B.heroes, ok: allReady && mpOk });
+      if (ok) out.push({ id, c, who: B.heroes, ok: allReady && mpOk, mpOk });
       continue;
     }
     if (!c.who.includes(p.id)) continue;
     const who = c.who.map((w) => B.heroes.find((q) => q.id === w));
     if (who.some((q) => !q || q.h.hp <= 0)) continue;
     if (!who.every((q, i) => knows(q.h, c.need[i]))) continue;
-    out.push({ id, c, who, ok: who.every((q) => q.gauge >= 100) && who.every((q, i) => q.h.mp >= mpCost(q, c.mp[i])) });
+    const mpOk = who.every((q, i) => q.h.mp >= mpCost(q, c.mp[i]));
+    out.push({ id, c, who, ok: who.every((q) => q.gauge >= 100) && mpOk, mpOk });
   }
   return out;
 }
-import { LEARN } from './data.js?v=6';
+import { LEARN } from './data.js?v=7';
 const TECHS_BY_INDEX = (id, i) => LEARN[id][i];
 const mpCost = (p, n) => (hasFx(p.h, 'halfmp') ? Math.ceil(n / 2) : n);
 
 async function heroTurn(p) {
-  B.cmdFor = p;
   for (;;) {
-    const cmds = [L('攻擊', 'Attack'), L('技', 'Tech'), L('道具', 'Item')];
-    if (!B.noFlee) cmds.push(L('逃跑', 'Run'));
-    const c = await menu(cmds.map((s) => ({ label: s })), { x: W - 120, y: H - 76 - cmds.length * 16, w: 100, cancel: false, title: nameOf(p.h) });
-    if (c === 0) {
+    // a friend on orders acts by them; B (or switching back to Manual) hands them to you
+    if (isAuto(p.h)) { B.cmdFor = null; const r = await autoTurn(p); if (r !== 'manual') return r; }
+    B.cmdFor = p;
+    const ids = ['attack', 'tech', 'item', 'guard', ...(B.noFlee ? [] : ['run']), 'orders'];
+    const names = { attack: L('攻擊', 'Attack'), tech: L('技', 'Tech'), item: L('道具', 'Item'), guard: L('防禦', 'Guard'), run: L('逃跑', 'Run'), orders: L('作戰', 'Orders') };
+    const ci = await menu(ids.map((k) => ({ label: names[k], color: k === 'orders' ? '#ffe8a0' : null })), { x: W - 120, y: H - 76 - ids.length * 16, w: 100, cancel: false, title: nameOf(p.h) });
+    const c = ids[ci];
+    if (!c) continue;
+    if (c === 'attack') {
       const t = await pickFoe(p, { area: 'one' });
       if (!t) continue;
       B.cmdFor = null; p.gauge = 0; await heroAttack(p, t); return;
     }
-    if (c === 1) {
+    if (c === 'tech') {
       const list = techsOf(p.h).map((id) => ({ id, t: TECHS[id] }));
       const combos = combosFor(p);
       const items = [...list.map(({ id, t }) => ({ label: t.name, right: mpCost(p, t.mp), disabled: p.h.mp < mpCost(p, t.mp) })), ...combos.map((k) => ({ label: '★' + k.c.name, right: k.who.map((q) => nameOf(q.h)[0]).join(''), disabled: !k.ok, color: '#ffd870' }))];
@@ -418,25 +439,125 @@ async function heroTurn(p) {
       cb.who.forEach((q, i) => { q.gauge = 0; q.h.mp -= mpCost(q, cb.c.mp[i]); });
       await doCombo(cb.who, cb.c, tgt); return;
     }
-    if (c === 2) {
-      const ids = Object.keys(S.inv).filter((id) => ITEMS[id] && ITEMS[id].type === 'use');
-      if (!ids.length) { sfx('buzz'); continue; }
-      const k = await menu(ids.map((id) => ({ label: ITEMS[id].name, right: count(id) })), { x: W - 230, y: 60, w: 210, maxRows: 8, title: L('道具', 'Items'), drawExtra: (i) => descLine(ITEMS[ids[i]].desc) });
+    if (c === 'item') {
+      const ids2 = Object.keys(S.inv).filter((id) => ITEMS[id] && ITEMS[id].type === 'use');
+      if (!ids2.length) { sfx('buzz'); continue; }
+      const k = await menu(ids2.map((id) => ({ label: ITEMS[id].name, right: count(id) })), { x: W - 230, y: 60, w: 210, maxRows: 8, title: L('道具', 'Items'), drawExtra: (i) => descLine(ITEMS[ids2[i]].desc) });
       if (k < 0) continue;
-      const it = ITEMS[ids[k]];
+      const it = ITEMS[ids2[k]];
       if (it.smoke && B.noFlee) { sfx('buzz'); continue; }
       const tgt = it.full || it.smoke ? B.heroes[0] : it.bomb ? (it.bomb.area === 'all' ? await pickFrom(liveFoes(), p, { area: 'all' }, null, true) : await pickFrom(liveFoes(), p, { area: 'circle', r: 64 })) : await pickAlly(p, !!it.revive);
       if (!tgt) continue;
-      if (it.smoke) { B.cmdFor = null; p.gauge = 0; addItem(ids[k], -1); await flee(); return 'fled'; }
-      B.cmdFor = null; p.gauge = 0; addItem(ids[k], -1);
+      if (it.smoke) { B.cmdFor = null; p.gauge = 0; addItem(ids2[k], -1); await flee(); return 'fled'; }
+      B.cmdFor = null; p.gauge = 0; addItem(ids2[k], -1);
       await useItem(p, it, tgt); await afterHits(); return;
     }
-    if (c === 3) {
+    if (c === 'guard') { B.cmdFor = null; p.gauge = 0; await doGuard(p); return; }
+    if (c === 'run') {
       B.cmdFor = null; p.gauge = 0;
       if (Math.random() < 0.75) { await flee(); return 'fled'; }
       sfx('buzz'); B.log = L('逃不掉！', "Couldn't get away!"); await wait(40); B.log = ''; return;
     }
+    if (c === 'orders') { const r = await ordersMenu(p); if (r) return r === 'done' ? undefined : r; }
   }
+}
+// brace: half damage until this friend's next turn
+async function doGuard(p) {
+  p.h.status.guard = true; sfx('buff');
+  popNum(p, L('防禦', 'Guard'), '#a0c8ff'); ring(p.x, p.y - 4, 30, 'none');
+  await wait(16);
+}
+
+// ---------- battle orders ----------
+const HOLD = 150;
+// whose turn it is among those with a full gauge; friends waiting together for a combo step aside
+function pickReady(ready) {
+  for (const p of ready) {
+    if (!p.hold) continue;
+    const cb = combosFor(p).find((k) => k.id === p.hold.id);
+    const valid = cb && cb.mpOk && isAuto(p.h) && cb.who.every((q) => q === p || (q.h.hp > 0 && isAuto(q.h)));
+    if (!valid || B.clock > p.hold.until) { p.hold = null; p.noHold = true; p.tacLabel = null; return p; }
+    if (cb.ok) { p.hold = null; return p; }
+  }
+  const waiting = new Set();
+  for (const q of B.heroes) if (q.hold) { const cb = combosFor(q).find((k) => k.id === q.hold.id); if (cb) for (const w of cb.who) if (w !== q && isAuto(w.h)) waiting.add(w); }
+  return ready.find((p) => !p.hold && !waiting.has(p)) || null;
+}
+// what the orders get to see
+function tacCtx(p, force) {
+  const H2 = HEROES[p.id];
+  return {
+    me: p, heroes: B.heroes, foes: liveFoes(), leaderTarget: B.leaderTarget && B.leaderTarget.hp > 0 ? B.leaderTarget : null, first: !p.turns, noHold: p.noHold || force,
+    techs: techsOf(p.h), mp: mpCost, combos: combosFor(p), centre,
+    reach: (t, user, f) => reachFrom(t, user, f),
+    est: (who, f, t) => estimate(who, f, t), healAmt: (who, t) => Math.round(who.reduce((a, q) => a + heroStats(q).mag, 0) / who.length * (t.pow || 0) * 1.5 + 20),
+    attack: H2.shot === 'fire' ? { kind: 'mag', pow: 0.9, el: 'fire' } : { kind: 'phys', pow: 1 },
+    isAuto: (h) => isAuto(h),
+  };
+}
+// a blow's size as the player could guess it: the damage sum without luck, with only known weaknesses
+function estimate(who, f, t) {
+  const s = who.map((q) => heroStats(q)), k = who.length > 1 ? 1.15 : 1;
+  let base;
+  if (t.kind === 'phys') base = s.reduce((a, x) => a + x.atk, 0) / s.length * t.pow * k - foeStat(f, 'def') * 0.6;
+  else { const st = t.stat === 'pow' ? 'atk' : 'mag'; base = s.reduce((a, x) => a + (st === 'atk' ? x.atk * 0.8 : x.mag * 1.25), 0) / s.length * (t.pow || 1) * k - foeStat(f, 'mdf') * 0.5; }
+  let d = Math.max(1, base) * knownMul(f, t.el);
+  if (f.status.iced && t.kind === 'phys' && t.el !== 'fire') d *= 0.35;
+  return d;
+}
+async function autoTurn(p, force = false) {
+  const d = decide(tacCtx(p, force)), c = d.cmd, rules = rulesOf(p.h);
+  if (!c) return 'manual';
+  if (c.type === 'hold') {
+    p.hold = { id: c.id, until: B.clock + HOLD };
+    p.tacLabel = { s: L('等夥伴：', 'Waiting: ') + '★' + COMBOS[c.id].name, t: HOLD, hold: true, rule: d.rule };
+    return 'hold';
+  }
+  // the order that fired floats over the friend for a moment; B in that moment takes control back
+  p.tacLabel = { s: d.rule >= 0 ? `${d.rule + 1}. ${condName(rules[d.rule].c)} → ${actName(rules[d.rule].a)}` : L('沒有合用的作戰 → 攻擊', 'No order fits → Attack'), t: 80, rule: d.rule };
+  await wait(14);
+  if (B.over) return 'manual';
+  if (!force && !isAuto(p.h)) { p.tacLabel = null; return 'manual'; }
+  if (c.type === 'attack') { p.gauge = 0; await heroAttack(p, c.target); return; }
+  if (c.type === 'guard') { p.gauge = 0; await doGuard(p); return; }
+  if (c.type === 'tech') { const t = TECHS[c.id]; p.gauge = 0; p.h.mp -= mpCost(p, t.mp); await doTech(p, c.id, t, c.target); return; }
+  if (c.type === 'item') { const it = ITEMS[c.id]; p.gauge = 0; addItem(c.id, -1); await useItem(p, it, c.target); await afterHits(); return; }
+  if (c.type === 'combo') {
+    const cb = combosFor(p).find((k) => k.id === c.id);
+    if (!cb || !cb.ok) { p.gauge = 0; await heroAttack(p, c.target && c.target.kind === 'foe' ? c.target : liveFoes()[0]); return; }
+    cb.who.forEach((q, i) => { q.gauge = 0; q.h.mp -= mpCost(q, cb.c.mp[i]); });
+    await doCombo(cb.who, cb.c, c.target); return;
+  }
+  p.gauge = 0; await heroAttack(p, liveFoes()[0]);
+}
+// the Orders entry of the command menu
+async function ordersMenu(p) {
+  for (;;) {
+    const t = TAC();
+    const rows = [
+      { label: L('模式', 'Mode'), right: modeName(t.mode) },
+      { label: L('自動兩倍速', 'Fast auto'), right: t.fast ? L('開', 'On') : L('關', 'Off') },
+      { label: L('這回合照作戰', 'Use orders now') },
+      { label: L('編輯作戰…', 'Edit orders…') },
+    ];
+    const help = [L('手動／作戰／混合輪流切換（T 鍵、手把 X 也可以）。', 'Cycle Manual / Orders / Mixed (or T, pad X).'), L('照作戰行動時動作加快一倍（F 鍵、手把 Select）。', 'Battles on orders play twice as fast (or F, pad Select).'), L(`這一次讓${nameOf(p.h)}照作戰行動，模式不變。`, `Let ${nameOf(p.h)} act by orders this once; the mode stays.`), L(`看看、改改${nameOf(p.h)}的作戰。戰鬥會等你。`, `View and change ${nameOf(p.h)}'s orders. The battle waits.`)];
+    const k = await menu(rows, { x: W - 236, y: H - 76 - 6 * 16, w: 210, title: L('作戰', 'Orders'), drawExtra: (i) => descLine(help[i]) });
+    if (k < 0) return null;
+    if (k === 0) { cycleMode(); sfx('ok'); showNote(modeNote()); touchButtons(true); if (isAuto(p.h)) return null; continue; }
+    if (k === 1) { t.fast = !t.fast; sfx('ok'); touchButtons(true); continue; }
+    if (k === 2) { B.cmdFor = null; const r = await autoTurn(p, true); return r === 'manual' ? null : r || 'done'; }
+    if (k === 3) { B.editing = true; try { await heroTactics(p.h, true); } finally { B.editing = false; } if (isAuto(p.h)) return null; }
+  }
+}
+const modeNote = () => ({ manual: L('手動：每個人都由你下指令', 'Manual: you choose for everyone'), auto: L('作戰：全員照作戰行動（B 收回操作）', 'Orders: everyone follows orders (B takes control back)'), mix: L('混合：照各人的設定', 'Mixed: as set for each friend') }[TAC().mode]);
+function showNote(s) { if (B) B.note = { s, t: 110 }; }
+// the touch buttons for orders show while a battle is on
+function touchButtons(on) {
+  try {
+    document.body.classList.toggle('inbattle', on);
+    const a = document.getElementById('tacBtn'), b = document.getElementById('fastBtn');
+    if (on && a && b) { a.textContent = modeName(TAC().mode); b.textContent = TAC().fast ? '×2' : '×1'; b.classList.toggle('lit', !!TAC().fast); a.classList.toggle('lit', TAC().mode !== 'manual'); }
+  } catch (e) { /* no page */ }
 }
 const areaWord = (t) => ({ one: L('（單體）', ' (one foe)'), all: L('（全體）', ' (all foes)'), line: L('（直線）', ' (a line)'), circle: L('（範圍）', ' (an area)'), self: L('（身邊）', ' (around self)'), ally: L('（一位夥伴）', ' (one friend)'), allies: L('（全體夥伴）', ' (all friends)') }[t.area] || '');
 function descLine(s) { if (!s) return; const lines = wrapShort(s, W - 40); windowBox(4, 4, W - 8, lines.length * 15 + 10); lines.forEach((l, i) => text(l, 14, 9 + i * 15)); }
@@ -468,12 +589,12 @@ function pickFrom(list, p, t, who, all = false) {
       },
       draw() {},
     };
-    UI_PUSH(w).then(res);
+    UI_PUSH(w).then((v) => res(v === -1 ? null : v));
   });
 }
 function UI_PUSH(w) { return new Promise((res) => { w.done = (v) => { UI_STACK_REMOVE(w); res(v); }; UI_STACK_ADD(w); }); }
 // the dialogue stack lives in ui.js; this little hook puts a target picker on it
-import { pushRaw, removeRaw } from './ui.js?v=6';
+import { pushRaw, removeRaw } from './ui.js?v=7';
 const UI_STACK_ADD = (w) => pushRaw(w), UI_STACK_REMOVE = (w) => removeRaw(w);
 
 // ---------- doing things ----------
@@ -487,8 +608,10 @@ async function approach(p, t, gap = 30) {
   face(p, t);
 }
 async function goHome(e) { e.dash = true; await walkTo(e, e.home[0], e.home[1], 12); e.dash = false; const others = e.kind === 'hero' ? liveFoes() : liveHeroes(); if (others.length) face(e, centre(others)); }
+const markLead = (p, t) => { if (B && p === B.heroes[0] && t && t.kind === 'foe') B.leaderTarget = t; };
 async function heroAttack(p, t) {
   const H = HEROES[p.id];
+  markLead(p, t);
   if (H.melee) {
     await approach(p, t);
     await act(p, H.atkAnim, 0.5, async () => { strikeFx(p, t); const { d, crit } = heroDamage([p], t, { kind: 'phys', pow: 1 }); hurtFoe(t, d, crit); });
@@ -500,7 +623,7 @@ async function heroAttack(p, t) {
   await afterHits();
 }
 async function doTech(p, id, t, tgt) {
-  B.log = t.name;
+  B.log = t.name; markLead(p, tgt);
   const H = HEROES[p.id];
   if (t.kind === 'heal' || t.kind === 'support') {
     face(p, tgt);
@@ -512,7 +635,7 @@ async function doTech(p, id, t, tgt) {
     await act(p, H.atkAnim, 0.5, async () => {
       const got = stealFrom(tgt);
       if (got) { sfx('chest'); popNum(tgt, L('偷到', 'Got ') + ITEMS[got].name, '#a0ffa0'); }
-      else { sfx('miss'); popNum(tgt, L('沒偷到', 'Nothing'), '#c0c0d0'); }
+      else { sfx('miss'); popNum(tgt, tgt.noLoot ? L('身上什麼都沒有', 'Carries nothing') : L('沒偷到', 'Missed'), '#c0c0d0'); }
     });
     await goHome(p); B.log = ''; return;
   }
@@ -581,7 +704,8 @@ function helpFriends(src, t, tgt) {
 function stealFrom(f) {
   if (f.stolen) return null;
   const pool = [...(f.m.drops || []), ...(f.m.drop ? [f.m.drop] : [])];
-  if (!pool.length || Math.random() < (f.m.boss ? 0.5 : 0.25)) return null;
+  if (!pool.length) { f.noLoot = true; return null; }
+  if (Math.random() < (f.m.boss ? 0.5 : 0.25)) return null;
   f.stolen = true;
   const id = pool[Math.floor(Math.random() * pool.length)][0];
   addItem(id); return id;
@@ -596,6 +720,9 @@ function afterHit(f, t) {
 function drainTo(src, d, t) { if (!t.drain) return; const k = Math.round(d * t.drain / src.length); for (const q of src) if (q.h.hp > 0) heal(q, k); }
 async function doCombo(who, c, tgt) {
   B.log = '★ ' + c.name; sfx('special');
+  // everyone in it has spent their turn: no one is still waiting for it
+  for (const q of who) { q.hold = null; q.started = false; q.noHold = false; if (q.tacLabel && q.tacLabel.hold) q.tacLabel = null; }
+  if (who.includes(B.heroes[0])) markLead(B.heroes[0], tgt);
   if (c.kind === 'heal' || c.kind === 'support') {
     await Promise.all(who.map((q) => { face(q, tgt); return act(q, 'spellcast', 0.9); }));
     helpFriends(who, c, tgt); wave('wind'); await wait(20); B.log = ''; return;
@@ -664,7 +791,7 @@ async function foeTurn(f) {
   // the Grief Engine (and the last foes) keep changing what hurts them
   if (f.m.mech === 'shift' && f.turns % 2 === 1) {
     const el = SHIFT[(SHIFT.indexOf(f.weak[0]) + 1 + Math.floor(Math.random() * (SHIFT.length - 1))) % SHIFT.length];
-    f.res = f.m.res.filter((e) => e !== el); f.weak = [el];
+    f.res = f.m.res.filter((e) => e !== el); f.weak = [el]; f.seenWeak = [el]; f.seenRes = [];
     popNum({ x: f.x, y: f.y - 30, ht: f.ht }, L(`弱點變成「${ELEM[el][0]}」`, `Now weak to ${ELEM[el][1]}`), '#ffd060'); await wait(30);
   }
   if (id === 'icearmor' && f.status.iced) id = 'maul';
@@ -753,8 +880,8 @@ function hitHero(f, p, mv) {
 // ---------- the end ----------
 function finish(result) {
   B.over = true;
-  for (const p of B.heroes) { p.anim = 'walk'; p.frame = 0; p.alpha = 1; p.jx = 0; p.jy = 0; p.flinch = 0; p.rx = 0; p.ry = 0; p.dash = false; p.trailPos = null; delete p.cheer; delete p.falling; }
-  F.camTarget = null; F.battle = null;
+  for (const p of B.heroes) { p.anim = 'walk'; p.frame = 0; p.alpha = 1; p.jx = 0; p.jy = 0; p.flinch = 0; p.rx = 0; p.ry = 0; p.dash = false; p.trailPos = null; delete p.cheer; delete p.falling; delete p.h.status.guard; p.hold = null; p.tacLabel = null; }
+  F.camTarget = null; F.battle = null; touchButtons(false);
   const r = B.resolve; const song = B.prevSong; B = null;
   r({ result, song });
 }
@@ -799,16 +926,43 @@ async function flee() {
 }
 
 // ---------- one frame ----------
-export function battleUpdate() {
-  if (!B) return;
+// fast auto: twice as fast while friends act by orders and no window is open
+const pace = () => (B && TAC().fast && TAC().mode !== 'manual' && !UI.active && !B.victory ? 2 : 1);
+function step(extra) {
   for (const e of B.heroes) {
     tickReact(e);
     // the victory pose: arms up through the cast, held at the top
     if (e.cheer !== undefined && e.h.hp > 0) { e.cheer++; e.anim = 'spellcast'; e.frame = Math.min(5, Math.floor(e.cheer / 4)); }
+    if (e.tacLabel && !e.tacLabel.hold && --e.tacLabel.t <= 0) e.tacLabel = null;
   }
   for (const e of B.foes) tickReact(e);
+  if (B.note && --B.note.t <= 0) B.note = null;
+  // the second step of a fast frame also moves the effects on
+  if (extra) for (const fx of F.fx) fx.t++;
   const ws = B.waiters; B.waiters = [];
   for (const w of ws) { if (--w.n <= 0) w.r(); else B.waiters.push(w); }
+}
+// keys read here, once a frame, never after a wait inside the battle
+function ordersKeys() {
+  if (B.victory || B.over) return;
+  const t = TAC();
+  if (input.pressed('tac') && !B.editing) {
+    cycleMode(); sfx('ok'); showNote(modeNote()); touchButtons(true);
+    // the friend whose menu is open now acts by orders: close the menu
+    if (B.cmdFor && isAuto(B.cmdFor.h)) abortUI();
+  } else if (input.pressed('fast') && !B.editing) { t.fast = !t.fast; sfx('cursor'); showNote(t.fast ? L('自動戰鬥兩倍速', 'Orders at double speed') : L('一般速度', 'Normal speed')); touchButtons(true); }
+  else if (!UI.active && t.mode !== 'manual' && input.pressed('b')) { t.mode = 'manual'; sfx('cancel'); showNote(L('改回手動：下一位起由你下指令', 'Manual: you choose from the next turn')); touchButtons(true); }
+}
+export function battleUpdate() {
+  if (!B) return;
+  ordersKeys();
+  step(false);
+  if (pace() > 1) {
+    // let the awaited code run on before the second step (promise callbacks queue up behind each other)
+    let k = 0;
+    const hop = () => { if (++k < 12) Promise.resolve().then(hop); else if (B) step(true); };
+    Promise.resolve().then(hop);
+  }
 }
 export function battleDraw() {
   if (!B) return;
@@ -834,6 +988,7 @@ export function battleDraw() {
     }
   }
   if (B.log) { const w = textW(B.log) + 28; windowBox(W / 2 - w / 2, 4, w, 22); text(B.log, W / 2, 9, '#ffe8a0', { align: 'center' }); }
+  drawOrders();
   // the party's panel
   const n = B.heroes.length, pw = Math.min(150, Math.floor((W - 8) / 3));
   windowBox(4, H - 62, W - 8, 58);
@@ -855,3 +1010,25 @@ export function battleDraw() {
   }
 }
 export { refreshParty };
+
+// the order that fired, over the friend who acts; the mode in the corner; short notes
+function drawOrders() {
+  const t = TAC();
+  for (const p of B.heroes) {
+    const lb = p.tacLabel; if (!lb || p.h.hp <= 0) continue;
+    const s = fit(lb.s, 230), w = textW(s) + 14, a = lb.hold ? 0.75 + Math.sin(F.t / 6) * 0.25 : Math.min(1, lb.t / 12);
+    let x = Math.round(p.x - F.cam.x - w / 2), y = Math.round(p.y - F.cam.y - (p.ht || 56) - 30);
+    x = Math.max(4, Math.min(W - w - 4, x)); y = Math.max(30, Math.min(H - 86, y));
+    ctx.globalAlpha = a; windowBox(x, y, w, 22, { alpha: 0.85 }); text(s, x + 7, y + 5, lb.hold ? '#a0e0ff' : '#ffe8a0'); ctx.globalAlpha = 1;
+  }
+  // the mode sign; with a keyboard or a pad it names the button too
+  // (on a touch screen the buttons at the top left show it instead)
+  if (!B.victory && lastDevice !== 'touch') {
+    const key = lastDevice === 'pad' ? 'X' : lastDevice === 'touch' ? '' : 'T';
+    const s = (key ? L(key + ' 鍵：', key + ': ') : '') + modeName(t.mode) + (t.mode !== 'manual' && t.fast ? ' ×2' : ''), w = textW(s) + 14;
+    ctx.globalAlpha = t.mode === 'manual' ? 0.6 : 1;
+    windowBox(4, 4, w, 22, { alpha: 0.8 }); text(s, 10, 9, t.mode === 'manual' ? '#a0a8c8' : '#ffe8a0');
+    ctx.globalAlpha = 1;
+  }
+  if (B.note) { const w = Math.min(W - 20, textW(B.note.s) + 24); ctx.globalAlpha = Math.min(1, B.note.t / 15); windowBox(W / 2 - w / 2, 30, w, 22); text(fit(B.note.s, w - 16), W / 2, 35, '#f8f8f8', { align: 'center' }); ctx.globalAlpha = 1; }
+}

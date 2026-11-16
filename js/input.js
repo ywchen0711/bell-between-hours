@@ -1,7 +1,7 @@
 // Keyboard, gamepad and on-screen touch buttons, read once per frame.
 const MAP = {
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
-  KeyZ: 'a', Enter: 'a', Space: 'a', KeyJ: 'a', KeyX: 'b', Escape: 'b', Backspace: 'b', KeyK: 'b', KeyC: 'menu', Tab: 'menu', ShiftLeft: 'run', ShiftRight: 'run',
+  KeyZ: 'a', Enter: 'a', Space: 'a', KeyJ: 'a', KeyX: 'b', Escape: 'b', Backspace: 'b', KeyK: 'b', KeyC: 'menu', Tab: 'menu', ShiftLeft: 'run', ShiftRight: 'run', KeyT: 'tac', KeyF: 'fast',
 };
 // tap remembers a key pressed and let go between two frames, so quick taps are never lost
 const down = new Set(), was = new Set(), touch = new Set(), tap = new Set();
@@ -45,9 +45,12 @@ export function pollInput() {
     if (b(0)) pad.add('a');
     if (b(1)) pad.add('b');
     if (b(3) || b(9)) pad.add('menu');
+    // battle orders: X switches the mode, Select the double speed
+    if (b(2)) pad.add('tac');
+    if (b(8)) pad.add('fast');
     if (pad.size) lastDevice = 'pad';
   }
-  for (const k of ['up', 'down', 'left', 'right', 'a', 'b', 'menu']) age[k] = input.held(k) ? (age[k] || 0) + 1 : 0;
+  for (const k of ['up', 'down', 'left', 'right', 'a', 'b', 'menu', 'tac', 'fast']) age[k] = input.held(k) ? (age[k] || 0) + 1 : 0;
 }
 export function endInput() {
   was.clear(); tap.clear();

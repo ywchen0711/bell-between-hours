@@ -1,15 +1,16 @@
 // The field menu: items, techniques, equipment, who fights, status, saving and language.
-import { W, H, text, textW, windowBox, bar, ctx } from './gfx.js?v=6';
-import { menu, panel, notice, pressKey, ask, wrap, fit, statusTags, drawTags } from './ui.js?v=6';
-import { bestiary, questLog } from './systems.js?v=6';
-import { S, stats, techsOf, nameOf, addItem, count, member, save, party } from './party.js?v=6';
-import { ITEMS, TECHS, HEROES, LEARN, expFor } from './data.js?v=6';
-import { L, LANG, setLang } from './i18n.js?v=6';
-import { sfx } from './audio.js?v=6';
-import { onSave, refreshParty } from './field.js?v=6';
-import { drawChar, hasAnim, animFrames } from './sprites.js?v=6';
-import { preview } from './doll.js?v=6';
-import { MAPS, mapName } from './maps.js?v=6';
+import { W, H, text, textW, windowBox, bar, ctx } from './gfx.js?v=7';
+import { menu, panel, notice, pressKey, ask, wrap, fit, statusTags, drawTags } from './ui.js?v=7';
+import { bestiary, questLog } from './systems.js?v=7';
+import { S, stats, techsOf, nameOf, addItem, count, member, save, party } from './party.js?v=7';
+import { ITEMS, TECHS, HEROES, LEARN, expFor } from './data.js?v=7';
+import { L, LANG, setLang } from './i18n.js?v=7';
+import { sfx } from './audio.js?v=7';
+import { onSave, refreshParty } from './field.js?v=7';
+import { drawChar, hasAnim, animFrames } from './sprites.js?v=7';
+import { preview } from './doll.js?v=7';
+import { MAPS, mapName } from './maps.js?v=7';
+import { tacticsMenu } from './tacmenu.js?v=7';
 
 function goldPanel() {
   return panel(() => { windowBox(W - 132, H - 60, 128, 56); text(L('金幣', 'Gold'), W - 122, H - 52, '#f8e070'); text(String(S.gold), W - 16, H - 52, '#f8f8f8', { align: 'right' }); text(mapName(MAPS[S.map]).slice(0, 12), W - 122, H - 32, '#a0a8c8'); });
@@ -48,16 +49,18 @@ function partyPanel() {
   });
 }
 export async function fieldMenu() {
-  const close = partyPanel(), closeG = goldPanel();
+  let close = partyPanel(), closeG = goldPanel();
+  const reopen = () => { close = partyPanel(); closeG = goldPanel(); };
   try {
     for (;;) {
-      const items = [L('道具', 'Items'), L('技', 'Techniques'), L('裝備', 'Equip'), L('隊伍', 'Party'), L('狀態', 'Status'), { label: L('存檔', 'Save'), disabled: !onSave() }, 'Language/語言', L('關閉', 'Close'), L('怪物圖鑑', 'Monster Book'), L('任務', 'Quests')];
-      const order = [0, 1, 2, 3, 4, 8, 9, 5, 6, 7];
-      const kk = await menu(order.map((i) => items[i]).map((x) => (typeof x === 'string' ? { label: x } : x)), { x: W - 132, y: 4, w: 128, maxRows: 10 });
+      const items = [L('道具', 'Items'), L('技', 'Techniques'), L('裝備', 'Equip'), L('隊伍', 'Party'), L('狀態', 'Status'), { label: L('存檔', 'Save'), disabled: !onSave() }, 'Language/語言', L('關閉', 'Close'), L('怪物圖鑑', 'Monster Book'), L('任務', 'Quests'), L('作戰', 'Tactics')];
+      const order = [0, 1, 2, 3, 10, 4, 8, 9, 5, 6, 7];
+      const kk = await menu(order.map((i) => items[i]).map((x) => (typeof x === 'string' ? { label: x } : x)), { x: W - 132, y: 4, w: 128, maxRows: 11 });
       const k = kk < 0 ? -1 : order[kk];
       if (k < 0 || k === 7) return;
       if (k === 8) await bestiary();
       if (k === 9) await questLog();
+      if (k === 10) { close(); closeG(); try { await tacticsMenu(); } finally { reopen(); } }
       if (k === 0) await itemMenu();
       if (k === 1) await techMenu();
       if (k === 2) await equipMenu();

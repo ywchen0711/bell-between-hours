@@ -1,7 +1,7 @@
 // People and creatures. Every person is one LPC sheet: rows of 64px frames (bigger frames for long
 // weapons), four directions per animation in the order up, left, down, right.
-import { IMG, CHAR_META, MON2_META } from './assets.js?v=6';
-import { canvas } from './gfx.js?v=6';
+import { IMG, CHAR_META, MON2_META } from './assets.js?v=7';
+import { canvas } from './gfx.js?v=7';
 
 export const DIRS = { u: 0, l: 1, d: 2, r: 3 };
 export const dirOf = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'l' : 'r') : dy < 0 ? 'u' : 'd');

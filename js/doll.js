@@ -3,13 +3,13 @@
 // layer sheets of their own (all Universal LPC layers, made by the build script into assets/doll). When a hero's
 // equipment changes, the layers are stacked by depth into one sheet in the browser, in the same layout the
 // sprite code already reads, and swapped in for the hero's old sheet. Layer sheets load only when first needed.
-import { IMG, CHAR_META } from './assets.js';
-import { canvas } from './gfx.js';
-import { ITEMS, HEROES } from './data.js';
-import { forgetSheet } from './sprites.js';
+import { IMG, CHAR_META } from './assets.js?v=6';
+import { canvas } from './gfx.js?v=6';
+import { ITEMS, HEROES } from './data.js?v=6';
+import { forgetSheet } from './sprites.js?v=6';
 
 let META = null;
-try { META = await (await fetch('assets/doll/doll.json?v=1')).json(); } catch (e) { META = null; }
+try { META = await (await fetch('assets/doll/doll.json?v=2')).json(); } catch (e) { META = null; }
 export const dollReady = () => !!META;
 
 // which look each piece of equipment has; anything not listed gets one from its kind and strength
@@ -61,7 +61,7 @@ const imgs = new Map();
 function sheetImg(file) {
   let p = imgs.get(file);
   if (!p) {
-    p = new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = 'assets/doll/' + file + '?v=1'; });
+    p = new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = 'assets/doll/' + file + '?v=2'; });
     imgs.set(file, p);
     if (imgs.size > 40) imgs.delete(imgs.keys().next().value);
   }

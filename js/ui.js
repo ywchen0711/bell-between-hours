@@ -1,9 +1,9 @@
 // Dialogue boxes, choices and list menus. Each returns a promise, so story scripts can be
 // written as plain async code; the main loop feeds them input and draws them on top.
-import { ctx, W, H, text, textW, windowBox, HAND, HAND_D } from './gfx.js';
-import { input } from './input.js';
-import { sfx } from './audio.js';
-import { speaker, L } from './i18n.js';
+import { ctx, W, H, text, textW, windowBox, HAND, HAND_D } from './gfx.js?v=6';
+import { input } from './input.js?v=6';
+import { sfx } from './audio.js?v=6';
+import { speaker, L } from './i18n.js?v=6';
 
 // short coloured status tags so the panels show who is poisoned, slowed, shielded... at a glance
 const STTAG = {

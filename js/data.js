@@ -1,6 +1,6 @@
 // Heroes, techniques, combined techniques, items, equipment and every monster. Monster strength is fixed:
 // it belongs to the place and the era, never to the party's level.
-import { localize } from './i18n.js';
+import { localize } from './i18n.js?v=6';
 
 export const ELEM = { light: ['光', 'Light'], fire: ['火', 'Fire'], wind: ['風', 'Wind'], bolt: ['雷', 'Thunder'], dark: ['闇', 'Shadow'] };
 

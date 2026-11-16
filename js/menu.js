@@ -1,15 +1,15 @@
 // The field menu: items, techniques, equipment, who fights, status, saving and language.
-import { W, H, text, textW, windowBox, bar, ctx } from './gfx.js';
-import { menu, panel, notice, pressKey, ask, wrap, fit, statusTags, drawTags } from './ui.js';
-import { bestiary, questLog } from './systems.js';
-import { S, stats, techsOf, nameOf, addItem, count, member, save, party } from './party.js';
-import { ITEMS, TECHS, HEROES, LEARN, expFor } from './data.js';
-import { L, LANG, setLang } from './i18n.js';
-import { sfx } from './audio.js';
-import { onSave, refreshParty } from './field.js';
-import { drawChar, hasAnim, animFrames } from './sprites.js';
-import { preview } from './doll.js';
-import { MAPS, mapName } from './maps.js';
+import { W, H, text, textW, windowBox, bar, ctx } from './gfx.js?v=6';
+import { menu, panel, notice, pressKey, ask, wrap, fit, statusTags, drawTags } from './ui.js?v=6';
+import { bestiary, questLog } from './systems.js?v=6';
+import { S, stats, techsOf, nameOf, addItem, count, member, save, party } from './party.js?v=6';
+import { ITEMS, TECHS, HEROES, LEARN, expFor } from './data.js?v=6';
+import { L, LANG, setLang } from './i18n.js?v=6';
+import { sfx } from './audio.js?v=6';
+import { onSave, refreshParty } from './field.js?v=6';
+import { drawChar, hasAnim, animFrames } from './sprites.js?v=6';
+import { preview } from './doll.js?v=6';
+import { MAPS, mapName } from './maps.js?v=6';
 
 function goldPanel() {
   return panel(() => { windowBox(W - 132, H - 60, 128, 56); text(L('金幣', 'Gold'), W - 122, H - 52, '#f8e070'); text(String(S.gold), W - 16, H - 52, '#f8f8f8', { align: 'right' }); text(mapName(MAPS[S.map]).slice(0, 12), W - 122, H - 32, '#a0a8c8'); });

@@ -3,15 +3,15 @@
 // game waits while you choose. Techniques reach different shapes of ground: one foe, a line from the
 // user through the target, a circle round the target or round the user, or everyone. Two or three
 // friends whose gauges are all full can combine their techniques.
-import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js';
-import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js';
-import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js';
-import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js';
-import { input } from './input.js';
-import { sfx, playMusic, currentSong } from './audio.js';
-import { L } from './i18n.js';
-import { UI, menu, pressKey, statusTags, drawTags, wrap } from './ui.js';
-import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js';
+import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js?v=6';
+import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js?v=6';
+import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js?v=6';
+import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js?v=6';
+import { input } from './input.js?v=6';
+import { sfx, playMusic, currentSong } from './audio.js?v=6';
+import { L } from './i18n.js?v=6';
+import { UI, menu, pressKey, statusTags, drawTags, wrap } from './ui.js?v=6';
+import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js?v=6';
 
 let B = null;
 export const inBattle = () => !!B;
@@ -152,7 +152,7 @@ async function act(e, anim, hitAt = 0.5, onHit) {
   }
   const a = hasAnim(sprite, anim) ? anim : hasAnim(sprite, 'slash') ? 'slash' : hasAnim(sprite, 'thrust') ? 'thrust' : 'spellcast';
   // the blow lands on the frame where the weapon meets the target
-  const n = animFrames(sprite, a), per = a === 'shoot' ? 3 : 4, N = n * per, hit = Math.floor(N * (hitAt === 0.5 && HITK[a] ? HITK[a] : hitAt)), reach = e.kind === 'hero' && !HEROES[e.id].melee && a !== 'spellcast' ? -2 : LUNGE[a] || 0;
+  const n = animFrames(sprite, a), per = a === 'shoot' ? 3 : a === 'slash' || a === 'thrust' ? 6 : 4, N = n * per, hit = Math.floor(N * (hitAt === 0.5 && HITK[a] ? HITK[a] : hitAt)), reach = e.kind === 'hero' && !HEROES[e.id].melee && a !== 'spellcast' ? -2 : LUNGE[a] || 0;
   e.anim = a;
   if (a === 'spellcast') castFx(e, e.kind === 'hero' ? HEROES[e.id].el : 'dark', N + 8);
   for (let i = 0; i < N; i++) {
@@ -161,6 +161,8 @@ async function act(e, anim, hitAt = 0.5, onHit) {
     if (onHit && i === hit) await onHit();
     await wait(1);
   }
+  // hold the follow-through a moment so the swing reads
+  if (a === 'slash' || a === 'thrust') for (let i = 0; i < 8; i++) { e.frame = n - 1; await wait(1); }
   e.anim = 'walk'; e.frame = 0; e.jx = 0; e.jy = 0;
 }
 
@@ -381,7 +383,7 @@ function combosFor(p) {
   }
   return out;
 }
-import { LEARN } from './data.js';
+import { LEARN } from './data.js?v=6';
 const TECHS_BY_INDEX = (id, i) => LEARN[id][i];
 const mpCost = (p, n) => (hasFx(p.h, 'halfmp') ? Math.ceil(n / 2) : n);
 
@@ -471,7 +473,7 @@ function pickFrom(list, p, t, who, all = false) {
 }
 function UI_PUSH(w) { return new Promise((res) => { w.done = (v) => { UI_STACK_REMOVE(w); res(v); }; UI_STACK_ADD(w); }); }
 // the dialogue stack lives in ui.js; this little hook puts a target picker on it
-import { pushRaw, removeRaw } from './ui.js';
+import { pushRaw, removeRaw } from './ui.js?v=6';
 const UI_STACK_ADD = (w) => pushRaw(w), UI_STACK_REMOVE = (w) => removeRaw(w);
 
 // ---------- doing things ----------

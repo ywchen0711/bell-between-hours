@@ -1,7 +1,7 @@
 // Every place in the three eras. Each map is painted with a few helpers (fill a rectangle with a ground
 // letter, draw a path, scatter trees), then lists what stands on it: props, houses, people, chests,
 // monster groups, doors to other maps and story triggers. Coordinates are in 32px tiles.
-import { L } from './i18n.js';
+import { L } from './i18n.js?v=6';
 
 // ground letters
 export const LEGEND = {

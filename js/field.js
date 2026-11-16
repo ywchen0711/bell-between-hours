@@ -1,14 +1,14 @@
 // Walking about: building a map from its description, collision, the party following the leader,
 // people, monsters you can see and walk round, doors, chests, hour-lights (save points), and drawing
 // everything sorted by how far down the screen it stands.
-import { ctx, W, H, T, canvas, text } from './gfx.js';
-import { MAPS, LEGEND, BLOCK } from './maps.js';
-import { renderGround, prop, PROPS, house, repaint } from './tiles.js';
-import { drawChar, drawMon, shadow, dirOf, MON, monName, hasAnim } from './sprites.js';
-import { MONSTERS, HEROES } from './data.js';
-import { S, party } from './party.js';
-import { input } from './input.js';
-import { sfx } from './audio.js';
+import { ctx, W, H, T, canvas, text } from './gfx.js?v=6';
+import { MAPS, LEGEND, BLOCK } from './maps.js?v=6';
+import { renderGround, prop, PROPS, house, repaint } from './tiles.js?v=6';
+import { drawChar, drawMon, shadow, dirOf, MON, monName, hasAnim } from './sprites.js?v=6';
+import { MONSTERS, HEROES } from './data.js?v=6';
+import { S, party } from './party.js?v=6';
+import { input } from './input.js?v=6';
+import { sfx } from './audio.js?v=6';
 
 export const F = { map: null, ents: [], foes: [], npcs: [], party: [], cam: { x: 0, y: 0 }, camTarget: null, t: 0, trail: [], battle: null, shake: 0, flash: null, fx: [], lock: false };
 const flag = (f) => !f || !!S.flags[f];
@@ -216,7 +216,8 @@ export function fieldUpdate(canAct) {
   }
   if (lead) {
     if (moving) { F.trail.unshift([lead.x, lead.y, lead.dir]); F.trail.length = 80; }
-    lead.frame = moving ? 1 + (Math.floor(lead.step / 3) % 8) : 0;
+    // in a battle the battle animates the leader (swings, dashes); leave its frame alone
+    if (!F.battle) lead.frame = moving ? 1 + (Math.floor(lead.step / 3) % 8) : 0;
     // friends follow the leader's footsteps; in a battle they stand where the battle put them
     if (!F.battle) F.party.slice(1).forEach((p, i) => {
       const [tx, ty, td] = F.trail[Math.min(79, (i + 1) * 14)];

@@ -1,21 +1,21 @@
 // The main loop: the title, walking about, battles on the map, story scripts and the ending.
-import { ctx, W, H, present, text, textW, glyphs, windowBox } from './gfx.js';
-import { input, pollInput, endInput, setupTouch } from './input.js';
-import { initAudio, playMusic, sfx, setMusic, music } from './audio.js';
-import { L, LANG, setLang } from './i18n.js';
-import { UI, uiTick, say, ask, notice, menu, wait as uiWait } from './ui.js';
-import { S, reset, load, save, saveInfo, addItem, addMember, fullHeal, party, carryOver, markEnding, endingsSeen } from './party.js';
-import { ITEMS, SHOPS } from './data.js';
-import { MAPS, ERA_NAME, mapName } from './maps.js';
-import { F, enterMap, fieldUpdate, fieldDraw, foeContact, facing, underfoot, refreshParty, tryMove, mapLabel, visible, spawnFoes } from './field.js';
-import { startBattle, battleUpdate, battleDraw, inBattle } from './battle.js';
-import { SCRIPTS } from './story.js';
-import './maps2.js';
-import './story2.js';
-import { fieldMenu, shopMenu } from './menu.js';
-import { MONSTERS } from './data.js';
-import { T } from './gfx.js';
-import { dress, dressed } from './doll.js';
+import { ctx, W, H, present, text, textW, glyphs, windowBox } from './gfx.js?v=6';
+import { input, pollInput, endInput, setupTouch } from './input.js?v=6';
+import { initAudio, playMusic, sfx, setMusic, music } from './audio.js?v=6';
+import { L, LANG, setLang } from './i18n.js?v=6';
+import { UI, uiTick, say, ask, notice, menu, wait as uiWait } from './ui.js?v=6';
+import { S, reset, load, save, saveInfo, addItem, addMember, fullHeal, party, carryOver, markEnding, endingsSeen } from './party.js?v=6';
+import { ITEMS, SHOPS } from './data.js?v=6';
+import { MAPS, ERA_NAME, mapName } from './maps.js?v=6';
+import { F, enterMap, fieldUpdate, fieldDraw, foeContact, facing, underfoot, refreshParty, tryMove, mapLabel, visible, spawnFoes } from './field.js?v=6';
+import { startBattle, battleUpdate, battleDraw, inBattle } from './battle.js?v=6';
+import { SCRIPTS } from './story.js?v=6';
+import './maps2.js?v=6';
+import './story2.js?v=6';
+import { fieldMenu, shopMenu } from './menu.js?v=6';
+import { MONSTERS } from './data.js?v=6';
+import { T } from './gfx.js?v=6';
+import { dress, dressed } from './doll.js?v=6';
 
 let mode = 'title', busy = false, fadeA = 1, fadeGoal = 0, label = null, caption = null, fleeT = 0;
 const overlays = [];
@@ -224,7 +224,7 @@ async function hourLight() {
   busy = true;
   fullHeal(); sfx('save');
   const k = await ask(null, L('時之燈的光暖暖的，大家的傷都好了。要記錄冒險嗎？', "The hour-light is warm; everyone's wounds are healed. Record your journey?"), [L('記錄', 'Save'), L('不用', 'No')]);
-  if (k === 0) { const { save } = await import('./party.js'); if (save()) await notice(L('記錄好了。', 'Saved.')); }
+  if (k === 0) { const { save } = await import('./party.js?v=6'); if (save()) await notice(L('記錄好了。', 'Saved.')); }
   busy = false;
 }
 function drawCaption() {

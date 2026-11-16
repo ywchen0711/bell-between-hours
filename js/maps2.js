@@ -1,7 +1,7 @@
 // The places of the expansion: the Hour Between (outside every era), Brasshaven in AD 1820, Frostcradle in
 // 30000 BC, Emberfall in AD 9000, the Heart of the Hush past the end of time, and the Unrung Bell.
 // Painted with the same helpers as maps.js. Coordinates are in 32px tiles.
-import { MAPS, ERA_NAME, grid, rect, path, blob, border, scatter, rows, def } from './maps.js';
+import { MAPS, ERA_NAME, grid, rect, path, blob, border, scatter, rows, def } from './maps.js?v=6';
 
 Object.assign(ERA_NAME, {
   interval: ['時隙之間', 'The Hour Between'], brass: ['公元 1820 年・黃銅港', 'AD 1820 · Brasshaven'], frost: ['公元前 30000 年・霜搖籃', '30000 BC · Frostcradle'],

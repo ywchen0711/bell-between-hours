@@ -1,13 +1,13 @@
 // The expansion's pastimes and records: the forge, the monster book, the quest log, fishing, and the
 // Gearwork Fair's strength bell, beetle race and prize booth. Each is a window on the dialogue stack.
-import { ctx, W, H, text, textW, windowBox, bar } from './gfx.js';
-import { input } from './input.js';
-import { sfx } from './audio.js';
-import { L } from './i18n.js';
-import { menu, panel, notice, pressKey, pushRaw, removeRaw, descBox, wrap, fit } from './ui.js';
-import { S, addItem, count } from './party.js';
-import { ITEMS, MONSTERS, ELEM, HEROES } from './data.js';
-import { drawMon, drawChar, monName } from './sprites.js';
+import { ctx, W, H, text, textW, windowBox, bar } from './gfx.js?v=6';
+import { input } from './input.js?v=6';
+import { sfx } from './audio.js?v=6';
+import { L } from './i18n.js?v=6';
+import { menu, panel, notice, pressKey, pushRaw, removeRaw, descBox, wrap, fit } from './ui.js?v=6';
+import { S, addItem, count } from './party.js?v=6';
+import { ITEMS, MONSTERS, ELEM, HEROES } from './data.js?v=6';
+import { drawMon, drawChar, monName } from './sprites.js?v=6';
 
 // a window with its own update and draw, as a promise
 function run(w) { return new Promise((res) => { w.done = (v) => { removeRaw(w); res(v); }; pushRaw(w); }); }

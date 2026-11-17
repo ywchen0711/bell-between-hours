@@ -1,28 +1,30 @@
 // The main loop: the title, walking about, battles on the map, story scripts and the ending.
-import { ctx, W, H, present, text, textW, glyphs, windowBox } from './gfx.js?v=8';
-import { input, pollInput, endInput, setupTouch } from './input.js?v=8';
-import { initAudio, playMusic, sfx, setMusic, music } from './audio.js?v=8';
-import { L, LANG, setLang } from './i18n.js?v=8';
-import { UI, uiTick, say, ask, notice, menu, wait as uiWait } from './ui.js?v=8';
-import { S, reset, load, save, saveInfo, addItem, addMember, fullHeal, party, carryOver, markEnding, endingsSeen } from './party.js?v=8';
-import { ITEMS, SHOPS } from './data.js?v=8';
-import { MAPS, ERA_NAME, mapName } from './maps.js?v=8';
-import { F, enterMap, fieldUpdate, fieldDraw, foeContact, facing, underfoot, refreshParty, tryMove, mapLabel, visible, spawnFoes } from './field.js?v=8';
-import { startBattle, battleUpdate, battleDraw, inBattle } from './battle.js?v=8';
-import { SCRIPTS } from './story.js?v=8';
-import './maps2.js?v=8';
-import './story2.js?v=8';
-import { fieldMenu, shopMenu } from './menu.js?v=8';
-import { MONSTERS } from './data.js?v=8';
-import { T } from './gfx.js?v=8';
-import { dress, dressed } from './doll.js?v=8';
+import { ctx, W, H, present, text, textW, glyphs, windowBox } from './gfx.js?v=9';
+import { input, pollInput, endInput, setupTouch } from './input.js?v=9';
+import { initAudio, playMusic, sfx, setMusic, music } from './audio.js?v=9';
+import { L, LANG, setLang } from './i18n.js?v=9';
+import { UI, uiTick, say, ask, notice, menu, wait as uiWait } from './ui.js?v=9';
+import { S, reset, load, save, saveInfo, addItem, addMember, fullHeal, party, carryOver, markEnding, endingsSeen } from './party.js?v=9';
+import { ITEMS, SHOPS } from './data.js?v=9';
+import { MAPS, ERA_NAME, mapName } from './maps.js?v=9';
+import { F, enterMap, fieldUpdate, fieldDraw, foeContact, facing, underfoot, refreshParty, tryMove, mapLabel, visible, spawnFoes } from './field.js?v=9';
+import { startBattle, battleUpdate, battleDraw, inBattle } from './battle.js?v=9';
+import { SCRIPTS } from './story.js?v=9';
+import './maps2.js?v=9';
+import './story2.js?v=9';
+import { fieldMenu, shopMenu } from './menu.js?v=9';
+import { MONSTERS } from './data.js?v=9';
+import { T } from './gfx.js?v=9';
+import { dress, dressed } from './doll.js?v=9';
 
 let mode = 'title', busy = false, fadeA = 1, fadeGoal = 0, label = null, caption = null, fleeT = 0;
 const overlays = [];
 
 // ---------- fading ----------
-const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
-async function fadeTo(a, frames = 18) { fadeGoal = a; const step = (a - fadeA) / frames; for (let i = 0; i < frames; i++) { fadeA += step; await nextFrame(); } fadeA = a; }
+// fades move one step per game tick (60 a second), whatever the screen's refresh rate
+const fades = [];
+function fadeTo(a, frames = 18) { fadeGoal = a; const step = (a - fadeA) / frames; return new Promise((res) => fades.push({ a, step, n: frames, res })); }
+function runFades() { for (const f of fades.slice()) { fadeA += f.step; if (--f.n <= 0) { fades.splice(fades.indexOf(f), 1); fadeA = f.a; f.res(); } } }
 
 // ---------- moving between maps ----------
 function mapMusic() {
@@ -224,7 +226,7 @@ async function hourLight() {
   busy = true;
   fullHeal(); sfx('save');
   const k = await ask(null, L('時之燈的光暖暖的，大家的傷都好了。要記錄冒險嗎？', "The hour-light is warm; everyone's wounds are healed. Record your journey?"), [L('記錄', 'Save'), L('不用', 'No')]);
-  if (k === 0) { const { save } = await import('./party.js?v=8'); if (save()) await notice(L('記錄好了。', 'Saved.')); }
+  if (k === 0) { const { save } = await import('./party.js?v=9'); if (save()) await notice(L('記錄好了。', 'Saved.')); }
   busy = false;
 }
 function drawCaption() {
@@ -252,6 +254,7 @@ function drawTitle() {
   if (ne) text(L(`看過的結局 ${ne}／3`, `Endings seen ${ne}/3`), W - 10, H - 16, '#c0a060', { align: 'right' });
 }
 function frame() {
+  runFades();
   pollInput(); uiTick();
   if (mode === 'title') { fieldUpdate(false); drawTitle(); UI.draw(); if (UI.active) UI.update(); }
   else if (mode === 'game') {
@@ -277,11 +280,22 @@ function frame() {
   drawCaption();
   present(false);
   endInput();
-  requestAnimationFrame(frame);
+}
+// a fixed 60 ticks a second: ProMotion screens call back at 120 Hz and Low Power Mode at 30 Hz,
+// and a long pause (another tab, the lock screen) is not caught up all at once
+let last = 0, acc = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (!last) last = now;
+  acc += Math.min(100, now - last); last = now;
+  let n = 0;
+  // a little slack so a 60 Hz screen whose frames come a hair early still gets one tick each
+  while (acc >= 1000 / 60 - 2 && n < 4) { frame(); acc -= 1000 / 60; n++; }
+  if (acc < -4) acc = -4;
 }
 setupTouch();
 addEventListener('keydown', () => initAudio(), { once: false });
 addEventListener('pointerdown', () => initAudio());
 window.G = { addItem, save, endingsSeen, setMode: (m) => { mode = m; UI.clear(); fadeA = 0; }, uiActive: () => UI.active || !!caption || fadeA > 0.05, fullHeal, S, F, warp, runScript, fight, MAPS, startBattle, get mode() { return mode; }, get busy() { return busy; }, MONSTERS, addMember, refreshParty, enterMap, dressed };
 titleScreen();
-requestAnimationFrame(frame);
+requestAnimationFrame(loop);

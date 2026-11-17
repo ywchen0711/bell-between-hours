@@ -2,8 +2,8 @@
 // Ground terrains use the LPC terrain block: 3 tiles wide and 6 tall, its outside see-through, so each
 // terrain is laid over the ones below it and its soft edge shows them through. Each tile is drawn as four
 // 16px quarters chosen from the block by that quarter's two side neighbours and its corner neighbour.
-import { atlas } from './assets.js?v=8';
-import { canvas, T } from './gfx.js?v=8';
+import { atlas } from './assets.js?v=9';
+import { canvas, T } from './gfx.js?v=9';
 
 // where each terrain block starts in terrain.png, in tiles
 export const TERRAIN = {

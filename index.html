@@ -5,34 +5,54 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>時隙鐘聲 The Bell Between Hours</title>
 <meta name="description" content="原創的時空旅行角色扮演遊戲：鐘匠學徒蓮在七個時代之間穿梭，阻止一口會吃掉時間的鐘。六位夥伴、三種結局、二周目。戰鬥就在地圖上進行，夥伴可以合體出招。中英雙語。An original time-travel RPG in Chinese and English: a clockmaker's apprentice crosses seven ages to stop a bell that eats time. Six heroes, three endings, New Game+. Battles happen right on the map, and friends can combine their techniques.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="時隙鐘聲">
+<meta name="theme-color" content="#05060c">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preload" href="fonts/Cubic_11.woff2" as="font" type="font/woff2" crossorigin>
 <style>
   @font-face { font-family: Cubic11; src: url(fonts/Cubic_11.woff2) format('woff2'); font-display: block; }
   html, body { margin: 0; height: 100%; background: #05060c; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+  /* iPhone / iPad: no bounce, no long-press callout or magnifier, no grey tap flash */
+  html, body { overscroll-behavior: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+  body { position: fixed; inset: 0; height: 100dvh; }
   body { display: flex; align-items: center; justify-content: center; font-family: Cubic11, sans-serif; color: #ccd; }
   #screen { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
   #touch { display: none; position: fixed; inset: 0; pointer-events: none; }
   body.touching #touch { display: block; }
-  .dpad { position: absolute; left: max(14px, env(safe-area-inset-left)); bottom: 14px; width: 132px; height: 132px; pointer-events: auto; }
+  .dpad { position: absolute; left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom)); width: 132px; height: 132px; pointer-events: auto; }
   .dpad div { position: absolute; width: 44px; height: 44px; background: rgba(30,36,64,0.55); border: 2px solid rgba(200,170,90,0.6); border-radius: 8px; }
   .dpad .u { left: 44px; top: 0; } .dpad .d { left: 44px; bottom: 0; } .dpad .l { left: 0; top: 44px; } .dpad .r { right: 0; top: 44px; } .dpad .c { left: 44px; top: 44px; border-radius: 0; background: rgba(20,24,44,0.45); }
   .btn { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: rgba(150,100,30,0.6); border: 3px solid rgba(240,210,130,0.75); color: #fff; font: 20px Cubic11, sans-serif; display: flex; align-items: center; justify-content: center; line-height: 1; pointer-events: auto; }
-  .btn.a { right: max(18px, env(safe-area-inset-right)); bottom: 64px; }
-  .btn.b { right: calc(max(18px, env(safe-area-inset-right)) + 70px); bottom: 18px; background: rgba(40,60,130,0.6); border-color: rgba(130,160,240,0.75); }
-  .btn.m { right: calc(max(18px, env(safe-area-inset-right)) + 56px); top: 10px; bottom: auto; width: 56px; height: 30px; border-radius: 15px; font-size: 14px; background: rgba(40,40,60,0.6); border-color: rgba(160,160,190,0.7); }
+  .btn.a { right: max(18px, env(safe-area-inset-right)); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 50px); }
+  .btn.b { right: calc(max(18px, env(safe-area-inset-right)) + 70px); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 4px); background: rgba(40,60,130,0.6); border-color: rgba(130,160,240,0.75); }
+  .btn.m { right: calc(max(18px, env(safe-area-inset-right)) + 56px); top: max(10px, env(safe-area-inset-top)); bottom: auto; width: 56px; height: 30px; border-radius: 15px; font-size: 14px; background: rgba(40,40,60,0.6); border-color: rgba(160,160,190,0.7); }
   /* battle orders: shown on touch screens while a battle is on */
-  .btn.t { display: none; left: max(14px, env(safe-area-inset-left)); top: 10px; bottom: auto; width: 64px; height: 30px; border-radius: 15px; font-size: 14px; background: rgba(40,40,60,0.6); border-color: rgba(160,160,190,0.7); }
+  .btn.t { display: none; left: max(14px, env(safe-area-inset-left)); top: max(10px, env(safe-area-inset-top)); bottom: auto; width: 64px; height: 30px; border-radius: 15px; font-size: 14px; background: rgba(40,40,60,0.6); border-color: rgba(160,160,190,0.7); }
   .btn.t.f { left: calc(max(14px, env(safe-area-inset-left)) + 72px); width: 44px; }
   .btn.t.lit { background: rgba(150,100,30,0.7); border-color: rgba(240,210,130,0.85); }
   body.inbattle .btn.t { display: flex; }
-  #musicBtn { position: fixed; top: 8px; right: 8px; z-index: 20; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.45); background: rgba(20,24,48,0.6); color: #fff; font: 20px sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #sa { position: fixed; visibility: hidden; pointer-events: none; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  body.padtop { align-items: flex-start; padding-top: env(safe-area-inset-top); box-sizing: border-box; }
+  #musicBtn { position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); z-index: 20; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.45); background: rgba(20,24,48,0.6); color: #fff; font: 20px sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   #musicBtn.off { opacity: 0.6; }
+  /* a tablet gets thumb-sized buttons, a little bigger than a phone's */
+  @media (min-width: 700px) and (min-height: 600px) and (pointer: coarse) {
+    .dpad { width: 168px; height: 168px; } .dpad div { width: 56px; height: 56px; }
+    .dpad .u, .dpad .d { left: 56px; } .dpad .l, .dpad .r { top: 56px; } .dpad .c { left: 56px; top: 56px; }
+    .btn.a, .btn.b { width: 76px; height: 76px; font-size: 24px; }
+    .btn.a { bottom: calc(max(20px, env(safe-area-inset-bottom)) + 64px); } .btn.b { right: calc(max(18px, env(safe-area-inset-right)) + 88px); bottom: calc(max(20px, env(safe-area-inset-bottom)) + 4px); }
+  }
   #musicBtn.off::after { content: ''; position: absolute; width: 30px; height: 3px; background: #ff6070; transform: rotate(-45deg); border-radius: 2px; }
 </style>
 </head>
 <body>
 <button id="musicBtn" type="button" aria-label="Music on/off" title="Music on/off (M)">♪</button>
 <canvas id="screen" width="480" height="320"></canvas>
+<div id="sa"></div>
 <div id="touch">
   <div class="dpad"><div class="u" data-k="up"></div><div class="l" data-k="left"></div><div class="c"></div><div class="r" data-k="right"></div><div class="d" data-k="down"></div></div>
   <div class="btn b" data-k="b">B</div>
@@ -44,18 +64,42 @@
 <script>
   // The 480x320 picture fills the window. Inside, the canvas holds a whole number of real pixels per game
   // pixel, so the pixel font stays sharp; the browser then scales that the last little bit.
+  // On a phone or tablet, when whole pixels would leave more than a tenth of the screen unused, the
+  // picture fills it instead (on those sharp screens the uneven pixels hardly show).
+  const PH = 320;
+    // held sideways on a touch screen, leave room for the pad: beside the picture (phones) or under it
+    // (tablets), whichever keeps the bigger picture, so the pad does not cover the text boxes
+    const room = (w, h) => {
+      const full = Math.min(w / 480, h / PH);
+      if (!document.body.classList.contains('touching') || w <= h) return [full, false];
+      const cs = getComputedStyle(document.getElementById('sa')), px = (v) => parseFloat(v) || 0;
+      const big = w >= 1000, sideW = (big ? 210 : 156) + Math.max(px(cs.paddingLeft), px(cs.paddingRight)), padH = (big ? 196 : 160) + px(cs.paddingBottom);
+      const below = Math.min(w / 480, (h - px(cs.paddingTop) - padH) / PH), beside = Math.min((w - 2 * sideW) / 480, h / PH), best = Math.max(below, beside);
+      return best >= full * 0.6 && best < full ? [best, below >= beside] : [full, false];
+    };
   function fit() {
-    const dpr = window.devicePixelRatio || 1;
-    let s = Math.min(innerWidth / 480, innerHeight / 320);
+    const dpr = window.devicePixelRatio || 1, coarse = matchMedia('(pointer: coarse)').matches;
+    const [full, top] = room(innerWidth, innerHeight);
+    if (document.body.classList.contains('padtop') !== top) document.body.classList.toggle('padtop', top);
+    let s = full, k;
     if (s * dpr >= 2) s = Math.floor(s * dpr) / dpr;
-    const k = Math.max(1, Math.min(4, Math.ceil(s * dpr - 0.01)));
+    if (coarse && dpr >= 2 && s < full * 0.9) { s = full; k = Math.max(1, Math.min(4, Math.floor(s * dpr))); }
+    else k = Math.max(1, Math.min(4, Math.ceil(s * dpr - 0.01)));
     const c = document.getElementById('screen');
     if (c.width !== 480 * k) { c.width = 480 * k; c.height = 320 * k; }
     c.style.width = Math.round(480 * s) + 'px'; c.style.height = Math.round(320 * s) + 'px';
   }
   addEventListener('resize', fit);
+  // iPhone / iPad: fit again after a turn or when the Safari bars come and go; no pinch or double-tap zoom
+  addEventListener('orientationchange', () => setTimeout(fit, 250));
+  addEventListener('pageshow', fit);
+  if (window.visualViewport) visualViewport.addEventListener('resize', fit);
+  addEventListener('gesturestart', (e) => e.preventDefault());
+  addEventListener('dblclick', (e) => e.preventDefault());
+  document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+  new MutationObserver(fit).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   fit();
 </script>
-<script type="module" src="js/main.js?v=8"></script>
+<script type="module" src="js/main.js?v=9"></script>
 </body>
 </html>

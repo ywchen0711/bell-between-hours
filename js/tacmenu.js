@@ -1,14 +1,14 @@
 // The battle orders menu: the mode, double speed, and each friend's list of orders (pick a condition and an
 // action, switch an order off, move it, delete it, use a ready-made set, copy a friend's). Reached from the
 // field menu and from the Orders command in battle.
-import { ctx, W, H, text, textW, windowBox } from './gfx.js?v=8';
-import { menu, notice, wrap, fit, pushRaw, removeRaw } from './ui.js?v=8';
-import { input } from './input.js?v=8';
-import { sfx } from './audio.js?v=8';
-import { L } from './i18n.js?v=8';
-import { S, nameOf, techsOf } from './party.js?v=8';
-import { TECHS, COMBOS } from './data.js?v=8';
-import { T, rulesOf, maxSlots, SLOT_STEPS, MODES, modeName, modeDesc, COND, ACT, ACT_ORDER, GROUPS, GROUP_COL, PRESETS, presetRules, suggested, condName, condDesc, actName, actDesc, kindReady, techChoices, comboChoices } from './tactics.js?v=8';
+import { ctx, W, H, text, textW, windowBox } from './gfx.js?v=9';
+import { menu, notice, wrap, fit, pushRaw, removeRaw } from './ui.js?v=9';
+import { input } from './input.js?v=9';
+import { sfx } from './audio.js?v=9';
+import { L } from './i18n.js?v=9';
+import { S, nameOf, techsOf } from './party.js?v=9';
+import { TECHS, COMBOS } from './data.js?v=9';
+import { T, rulesOf, maxSlots, SLOT_STEPS, MODES, modeName, modeDesc, COND, ACT, ACT_ORDER, GROUPS, GROUP_COL, PRESETS, presetRules, suggested, condName, condDesc, actName, actDesc, kindReady, techChoices, comboChoices } from './tactics.js?v=9';
 
 const onOff = (v) => (v ? L('開', 'On') : L('關', 'Off'));
 const GREY = '#8088a8';

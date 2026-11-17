@@ -29,5 +29,12 @@ dying sun, where Vesper the Bellwright must face the machine she built to hold o
 
 Controls: arrows/WASD move, Z/Enter confirm, X back (hold X or Shift to run), C/Tab menu, M music; in battle T switches Manual/Orders/Mixed, F double speed (any mode), X takes control back. Touch buttons appear on phones.
 
+## iPhone and iPad
+
+- The touch buttons also appear on iPad. Held sideways, the picture leaves room for them so they do not cover the text boxes. Hold B to run; a battle adds Manual/Orders and double-speed buttons at the top.
+- Sound starts with your first tap. It keeps playing with the ring/silent switch on silent (iOS 17 and later), and comes back after a call, Siri or the lock screen.
+- **Add to Home Screen** from Safari's Share menu to play full screen with its own icon.
+- The game runs at the same speed on 120 Hz ProMotion screens and in Low Power Mode.
+
 Art: LPC (CC-BY-SA 3.0 / GPL 3.0, OGA-BY 3.0) and LPC-style creatures from OpenGameArt (CC-BY, CC-BY-SA, CC0).
 Music: Juhani Junkala and others (CC0, CC-BY 4.0). See CREDITS.md.

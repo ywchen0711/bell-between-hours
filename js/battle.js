@@ -3,18 +3,18 @@
 // game waits while you choose. Techniques reach different shapes of ground: one foe, a line from the
 // user through the target, a circle round the target or round the user, or everyone. Two or three
 // friends whose gauges are all full can combine their techniques.
-import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js?v=8';
-import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js?v=8';
-import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js?v=8';
-import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js?v=8';
-import { input } from './input.js?v=8';
-import { sfx, playMusic, currentSong } from './audio.js?v=8';
-import { L } from './i18n.js?v=8';
-import { UI, menu, pressKey, statusTags, drawTags, wrap, fit, abortUI } from './ui.js?v=8';
-import { T as TAC, isAuto, decide, cycleMode, modeName, condName, actName, knownMul, rulesOf } from './tactics.js?v=8';
-import { heroTactics } from './tacmenu.js?v=8';
-import { lastDevice } from './input.js?v=8';
-import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js?v=8';
+import { ctx, W, H, text, textW, windowBox, bar, HAND, HAND_D } from './gfx.js?v=9';
+import { F, addFx, tryMove, walkable, refreshParty, hiddenAt } from './field.js?v=9';
+import { MONSTERS, MOVES, TECHS, COMBOS, ITEMS, HEROES, ELEM } from './data.js?v=9';
+import { S, stats, techsOf, knows, nameOf, gain, addItem, count, party, hasFx } from './party.js?v=9';
+import { input } from './input.js?v=9';
+import { sfx, playMusic, currentSong } from './audio.js?v=9';
+import { L } from './i18n.js?v=9';
+import { UI, menu, pressKey, statusTags, drawTags, wrap, fit, abortUI } from './ui.js?v=9';
+import { T as TAC, isAuto, decide, cycleMode, modeName, condName, actName, knownMul, rulesOf } from './tactics.js?v=9';
+import { heroTactics } from './tacmenu.js?v=9';
+import { lastDevice } from './input.js?v=9';
+import { animFrames, hasAnim, dirOf, MON, monName } from './sprites.js?v=9';
 
 let B = null;
 export const inBattle = () => !!B;
@@ -400,7 +400,7 @@ function combosFor(p) {
   }
   return out;
 }
-import { LEARN } from './data.js?v=8';
+import { LEARN } from './data.js?v=9';
 const TECHS_BY_INDEX = (id, i) => LEARN[id][i];
 const mpCost = (p, n) => (hasFx(p.h, 'halfmp') ? Math.ceil(n / 2) : n);
 
@@ -594,7 +594,7 @@ function pickFrom(list, p, t, who, all = false) {
 }
 function UI_PUSH(w) { return new Promise((res) => { w.done = (v) => { UI_STACK_REMOVE(w); res(v); }; UI_STACK_ADD(w); }); }
 // the dialogue stack lives in ui.js; this little hook puts a target picker on it
-import { pushRaw, removeRaw } from './ui.js?v=8';
+import { pushRaw, removeRaw } from './ui.js?v=9';
 const UI_STACK_ADD = (w) => pushRaw(w), UI_STACK_REMOVE = (w) => removeRaw(w);
 
 // ---------- doing things ----------

@@ -3,9 +3,9 @@
 // with none, a plain attack. Orders only know what the player could know: a weakness once the monster book
 // has it (after one has been beaten) or once a hit has shown it, HP as the target window shows it, and
 // whether a steal has already worked.
-import { TECHS, COMBOS, ITEMS, LEARN, HEROES } from './data.js?v=8';
-import { S, stats, techsOf, knows, nameOf, member } from './party.js?v=8';
-import { L } from './i18n.js?v=8';
+import { TECHS, COMBOS, ITEMS, LEARN, HEROES } from './data.js?v=9';
+import { S, stats, techsOf, knows, nameOf, member } from './party.js?v=9';
+import { L } from './i18n.js?v=9';
 
 // ---------- the save ----------
 export const MODES = ['manual', 'auto', 'mix'];

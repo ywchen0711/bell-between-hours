@@ -1,14 +1,14 @@
 // Walking about: building a map from its description, collision, the party following the leader,
 // people, monsters you can see and walk round, doors, chests, hour-lights (save points), and drawing
 // everything sorted by how far down the screen it stands.
-import { ctx, W, H, T, canvas, text } from './gfx.js?v=8';
-import { MAPS, LEGEND, BLOCK } from './maps.js?v=8';
-import { renderGround, prop, PROPS, house, repaint } from './tiles.js?v=8';
-import { drawChar, drawMon, shadow, dirOf, MON, monName, hasAnim } from './sprites.js?v=8';
-import { MONSTERS, HEROES } from './data.js?v=8';
-import { S, party } from './party.js?v=8';
-import { input } from './input.js?v=8';
-import { sfx } from './audio.js?v=8';
+import { ctx, W, H, T, canvas, text } from './gfx.js?v=9';
+import { MAPS, LEGEND, BLOCK } from './maps.js?v=9';
+import { renderGround, prop, PROPS, house, repaint } from './tiles.js?v=9';
+import { drawChar, drawMon, shadow, dirOf, MON, monName, hasAnim } from './sprites.js?v=9';
+import { MONSTERS, HEROES } from './data.js?v=9';
+import { S, party } from './party.js?v=9';
+import { input } from './input.js?v=9';
+import { sfx } from './audio.js?v=9';
 
 export const F = { map: null, ents: [], foes: [], npcs: [], party: [], cam: { x: 0, y: 0 }, camTarget: null, t: 0, trail: [], battle: null, shake: 0, flash: null, fx: [], lock: false };
 const flag = (f) => !f || !!S.flags[f];

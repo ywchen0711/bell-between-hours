@@ -3,10 +3,10 @@
 // layer sheets of their own (all Universal LPC layers, made by the build script into assets/doll). When a hero's
 // equipment changes, the layers are stacked by depth into one sheet in the browser, in the same layout the
 // sprite code already reads, and swapped in for the hero's old sheet. Layer sheets load only when first needed.
-import { IMG, CHAR_META } from './assets.js?v=8';
-import { canvas } from './gfx.js?v=8';
-import { ITEMS, HEROES } from './data.js?v=8';
-import { forgetSheet } from './sprites.js?v=8';
+import { IMG, CHAR_META } from './assets.js?v=9';
+import { canvas } from './gfx.js?v=9';
+import { ITEMS, HEROES } from './data.js?v=9';
+import { forgetSheet } from './sprites.js?v=9';
 
 let META = null;
 try { META = await (await fetch('assets/doll/doll.json?v=2')).json(); } catch (e) { META = null; }
